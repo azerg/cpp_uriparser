@@ -6,6 +6,7 @@
 #include "cpp_uriparser_query.h"
 #include <iostream>
 
+using namespace uri_parser;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -13,11 +14,13 @@ int _tmain(int argc, _TCHAR* argv[])
   UriUriA uri;
 
   state.uri = &uri;
-  if (uriParseUriA(&state, "http://delicious.com/post?url=http://domain.tld/&title=Thetitleofapost") != URI_SUCCESS){
+  if (uriParseUriA(&state, "http://delicious.com/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla") != URI_SUCCESS){
     throw std::runtime_error("1");
   }
   uri_parser::UriQueryList<UriQueryListStructA, UriUriA> queryList(uri, &uriDissectQueryMallocA, &uriFreeQueryListA);
 
+  UriQueryListIterator<UriQueryListStructA, std::string> it(nullptr);
+  auto tt = std::begin(it);
   /*
   const char* url = "http://www.example.com/name%20with%20spaces/lalala/TheLastOne";
 

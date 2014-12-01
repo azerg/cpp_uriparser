@@ -57,6 +57,7 @@ namespace uri_parser
       return ((pathSegment_.text.afterLast == right.pathSegment_.text.afterLast) &&
         (pathSegment_.next == right.pathSegment_.next));
     }
+
     bool operator!=(const IteratorType& right)
     {
       return !operator==(right);
