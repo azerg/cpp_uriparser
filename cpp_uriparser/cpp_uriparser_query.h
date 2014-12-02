@@ -8,19 +8,87 @@
 
 namespace uri_parser
 {
-  template <class UriQueryListType, class UriObjType>
-  class UriQueryList
+  template <class UrlReturnType>
+  struct UriQueryEntry
+  {
+    UrlReturnType key_;
+    UrlReturnType value_;
+  };
+
+  template <class UriQueryListType, class UrlReturnType>
+  class UriQueryListIterator :
+    public std::iterator<std::forward_iterator_tag, UriQueryEntry<UrlReturnType>>
+  {
+    typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
+  public:
+    UriQueryListIterator(UriQueryListType* list) :
+      currentQueryList_(list){}
+
+    IteratorType& operator++()
+    {
+      if (currentQueryList_->next != nullptr)
+      {
+        currentQueryList_ = currentQueryList_->next;
+      }
+      else
+      {
+        *this = IteratorType(nullptr);
+      }
+      return *this;
+    }
+
+    IteratorType operator++(int) const
+    {
+      IteratorType tmp(*this);
+      return ++tmp;
+    }
+
+    bool operator==(const IteratorType& right)
+    {
+      return ( currentQueryList_->key == right.currentQueryList_->key &&
+        (currentQueryList_->value == right.currentQueryList_->value) &&
+        (currentQueryList_->next == right.currentQueryList_->next));
+    }
+
+    bool operator!=(const IteratorType& right)
+    {
+      return !operator==(right);
+    }
+
+    UrlReturnType operator*() const
+    {
+      return UriQueryEntry<UrlReturnType>{currentQueryList_->key, currentQueryList_->value};
+    }
+
+    UrlReturnType* operator->()
+    {
+      returnObjStorage_ = std::move(operator*());
+      return &returnObjStorage_;
+    }
+
+  private:
+    UriQueryListType* currentQueryList_;
+    UrlReturnType returnObjStorage_;
+  };
+
+
+  template <class UriQueryListType, class UrlReturnType, class UriObjType>
+  class UriQueryListBase
   {
     typedef decltype(UriQueryListType::key) QueryListCharType;
     typedef std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> UriDissectQueryMallocProc;
     typedef std::function<void(UriQueryListType*)> UriFreeQueryListProc;
+    typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
   public:
-    UriQueryList(UriObjType& uri, UriDissectQueryMallocProc uriDissectQueryMallocProc, UriFreeQueryListProc uriFreeQueryListProc):
+    IteratorType begin(){ return IteratorType(queryList_); };
+    IteratorType end(){ return IteratorType(nullptr); };
+
+    UriQueryListBase(const UriObjType& uri, UriDissectQueryMallocProc uriDissectQueryMallocProc, UriFreeQueryListProc uriFreeQueryListProc) :
       uriDissectQueryMallocProc_(uriDissectQueryMallocProc),
       uriFreeQueryListProc_(uriFreeQueryListProc)
     {
       if (uriDissectQueryMallocProc_(&queryList_, &itemCount_, uri.query.first,
-        uri.query.afterLast ) != URI_SUCCESS )
+        uri.query.afterLast) != URI_SUCCESS)
       {
         throw std::runtime_error("UriQueryList error: error parsing query array");
       }
@@ -37,7 +105,7 @@ namespace uri_parser
       ///////////////////////////
     }
 
-    virtual ~UriQueryList()
+    virtual ~UriQueryListBase()
     {
       uriFreeQueryListProc_(queryList_);
     }
@@ -50,52 +118,29 @@ namespace uri_parser
     UriFreeQueryListProc uriFreeQueryListProc_;
   };
 
-  template <class UrlReturnType>
-  struct UriQueryEntry
-  {
-    UrlReturnType key_;
-    UrlReturnType value_;
-  };
+  template <class UrlTextType, class Empty = void>
+  class UriQueryList;
 
-  template <class UriQueryListType, class UrlReturnType>
-  class UriQueryListIterator:
-    public std::iterator<std::forward_iterator_tag, UriQueryEntry<UrlReturnType>>
+  template <class UrlTextType>
+  class UriQueryList < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const char*>::value >::type> :
+    public UriQueryListBase<UriQueryListStructA, std::string, UriUriA>
   {
-    typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
   public:
-    UriQueryListIterator(UriQueryListType* list):
-      currentQueryList_(list){}
-
-    IteratorType begin(){ return IteratorType(currentQueryList_); }
-    IteratorType end(){ return IteratorType(nullptr); }
-
-    IteratorType& operator++()
-    {
-      if (currentQueryList_->next != nullptr)
-      {
-        currentQueryList_ = currentQueryList_->next;
-        return *this;
-      }
-      return IteratorType(nullptr);
-    }
-
-    IteratorType operator++(int) const
-    {
-      IteratorType tmp(*this);
-      return ++tmp;
-    }
-
-    bool operator==(const IteratorType& right)
-    {
-      return currentQueryList_ == right;
-    }
-
-    bool operator!=(const IteratorType& right)
-    {
-      return !operator==(right);
-    }
-
-  private:
-    UriQueryListType* currentQueryList_;
+    explicit UriQueryList(const UriUriA& uri):
+      UriQueryListBase(uri, &uriDissectQueryMallocA, &uriFreeQueryListA){}
+    //UriQueryList(UriQueryList&& right) :
+    //  UriQueryListBase(std::move(right)){}
   };
-} // uri_parser
+  /*
+  template <class UrlTextType>
+  class UriQueryList < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type> :
+    public UriQueryListBase<UriQueryListStructA, std::wstring, UriUriW>
+  {
+  public:
+    explicit UriQueryList(UriUriW& uri) :
+      UriQueryListBase(uri, &uriDissectQueryMallocW, &uriFreeQueryListW){}
+    UriQueryList(UriQueryList&& right) :
+      UriQueryListBase(std::move(right)){}
+  };
+  */
+} // namespace uri_parser

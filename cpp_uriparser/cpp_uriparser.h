@@ -124,9 +124,15 @@ namespace uri_parser
       return GetStringFromUrlPart(uriObj_.hostText);
     }
 
-    boost::optional<UrlReturnType> Query() const
+    boost::optional<UriQueryList<UrlTextType>> Query() const
     {
-      return GetStringFromUrlPart(uriObj_.query);
+      auto queryStr = GetStringFromUrlPart(uriObj_.query);
+      if (!queryStr.is_initialized())
+      {
+        return boost::optional<UriQueryList<UrlTextType>>();
+      }
+
+      return UriQueryList<UrlTextType>(uriObj_);
     }
 
     boost::optional<UrlReturnType> Fragment() const
@@ -237,4 +243,4 @@ namespace uri_parser
 
     return retVal;
   }
-} // uri_parser
+} // namespace uri_parser
