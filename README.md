@@ -5,6 +5,7 @@ cpp_uriparser is C++ wrapper for c [uriparser library].
 # Features
 C++ wrapper for uriparser have next features:
 - Iterator for path
+- Iterator for query
 - One implementation supports both ANSI & Unicode
 
 # Dependencies
