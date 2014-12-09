@@ -45,6 +45,19 @@ namespace uri_parser
 
     bool operator==(const IteratorType& right)
     {
+      // supports end() == end()
+      if (currentQueryList_ == right.currentQueryList_)
+      {
+        return true;
+      }
+
+      // comparing Iterator with end()
+      if (right.currentQueryList_ == nullptr)
+      {
+        return false;
+      }
+
+      // comparing two "normal" iterators
       return ( currentQueryList_->key == right.currentQueryList_->key &&
         (currentQueryList_->value == right.currentQueryList_->value) &&
         (currentQueryList_->next == right.currentQueryList_->next));
@@ -55,12 +68,14 @@ namespace uri_parser
       return !operator==(right);
     }
 
-    UrlReturnType operator*() const
+    UriQueryEntry<UrlReturnType> operator*() const
     {
-      return UriQueryEntry<UrlReturnType>{currentQueryList_->key, currentQueryList_->value};
+      return UriQueryEntry<UrlReturnType>{
+        currentQueryList_->key == nullptr ? UrlReturnType() : currentQueryList_->key,
+        currentQueryList_->value == nullptr ? UrlReturnType() : currentQueryList_->value};
     }
 
-    UrlReturnType* operator->()
+    UriQueryEntry<UrlReturnType>* operator->()
     {
       returnObjStorage_ = std::move(operator*());
       return &returnObjStorage_;
@@ -68,7 +83,7 @@ namespace uri_parser
 
   private:
     UriQueryListType* currentQueryList_;
-    UrlReturnType returnObjStorage_;
+    UriQueryEntry<UrlReturnType> returnObjStorage_;
   };
 
 
@@ -80,6 +95,26 @@ namespace uri_parser
     typedef std::function<void(UriQueryListType*)> UriFreeQueryListProc;
     typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
   public:
+    UriQueryListBase(UriQueryListBase&& right):
+      itemCount_(std::move(right.itemCount_)),
+      uriFreeQueryListProc_(std::move(right.uriFreeQueryListProc_)),
+      uriDissectQueryMallocProc_(std::move(right.uriDissectQueryMallocProc_)),
+      queryList_(std::move(right.queryList_))
+    {
+      // we have to cleaup right ptr, not to free it in right's destructor
+      right.queryList_ = nullptr;
+    }
+
+    UriQueryListBase& operator=(UriQueryListBase&& right)
+    {
+      std::swap(this->itemCount_, right.itemCount_);
+      std::swap(this->uriDissectQueryMallocProc_, right.uriDissectQueryMallocProc_);
+      std::swap(this->uriFreeQueryListProc_, right.uriFreeQueryListProc_);
+      this->queryList_ = right.queryList_;
+      right.queryList_ = nullptr;
+      return *this;
+    }
+
     IteratorType begin(){ return IteratorType(queryList_); };
     IteratorType end(){ return IteratorType(nullptr); };
 
@@ -92,28 +127,19 @@ namespace uri_parser
       {
         throw std::runtime_error("UriQueryList error: error parsing query array");
       }
-
-      /////////////// remove me
-      currentQueryList_ = queryList_;
-
-      UriQueryListType* cur = queryList_;
-      for (int i = 0; i < itemCount_; i++)
-      {
-        std::cout << cur->key << ":" << cur->value << std::endl;
-        cur = cur->next;
-      }
-      ///////////////////////////
     }
 
     virtual ~UriQueryListBase()
     {
-      uriFreeQueryListProc_(queryList_);
+      if (queryList_ != nullptr)
+      {
+        uriFreeQueryListProc_(queryList_);
+      }
     }
 
   private:
     int itemCount_;
     UriQueryListType* queryList_;
-    UriQueryListType* currentQueryList_; //////////// remove me
     UriDissectQueryMallocProc uriDissectQueryMallocProc_;
     UriFreeQueryListProc uriFreeQueryListProc_;
   };
@@ -128,10 +154,10 @@ namespace uri_parser
   public:
     explicit UriQueryList(const UriUriA& uri):
       UriQueryListBase(uri, &uriDissectQueryMallocA, &uriFreeQueryListA){}
-    //UriQueryList(UriQueryList&& right) :
-    //  UriQueryListBase(std::move(right)){}
+    UriQueryList(UriQueryList&& right) :
+      UriQueryListBase(std::move(right)){}
   };
-  /*
+  
   template <class UrlTextType>
   class UriQueryList < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type> :
     public UriQueryListBase<UriQueryListStructA, std::wstring, UriUriW>
@@ -142,5 +168,4 @@ namespace uri_parser
     UriQueryList(UriQueryList&& right) :
       UriQueryListBase(std::move(right)){}
   };
-  */
 } // namespace uri_parser

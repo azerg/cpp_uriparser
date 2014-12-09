@@ -14,7 +14,6 @@ int _tmain(int argc, _TCHAR* argv[])
     UriParserStateA state;
     UriUriA uri;
 
-
     state.uri = &uri;
     if (uriParseUriA(&state, "http://delicious.com/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla") != URI_SUCCESS){
       throw std::runtime_error("1");
@@ -33,7 +32,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
   for (auto item = std::begin(query.get()); item != std::end(query.get()); ++item)
   {
-    //std::cout << 
+    std::cout << item->key_.c_str() << ":" << item->value_.c_str() << std::endl;
   }
 
   //uri_parser::UriQueryList<UriQueryListStructA, UriUriA> queryList(uri, &uriDissectQueryMallocA, &uriFreeQueryListA);
