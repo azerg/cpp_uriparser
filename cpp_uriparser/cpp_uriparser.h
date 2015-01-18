@@ -124,14 +124,8 @@ namespace uri_parser
       return GetStringFromUrlPart(uriObj_.hostText);
     }
 
-    boost::optional<UriQueryList<UrlTextType>> Query() const
+    UriQueryList<UrlTextType> Query() const
     {
-      auto queryStr = GetStringFromUrlPart(uriObj_.query);
-      if (!queryStr.is_initialized())
-      {
-        return boost::optional<UriQueryList<UrlTextType>>();
-      }
-
       return UriQueryList<UrlTextType>(uriObj_);
     }
 

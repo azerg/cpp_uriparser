@@ -105,6 +105,9 @@ namespace uri_parser
       right.queryList_ = nullptr;
     }
 
+    bool empty() const { return itemCount_ == 0; }
+    int size() const { return itemCount_; }
+
     UriQueryListBase& operator=(UriQueryListBase&& right)
     {
       std::swap(this->itemCount_, right.itemCount_);
@@ -115,18 +118,32 @@ namespace uri_parser
       return *this;
     }
 
-    IteratorType begin(){ return IteratorType(queryList_); };
-    IteratorType end(){ return IteratorType(nullptr); };
+    IteratorType begin() const { return IteratorType(queryList_); };
+    const IteratorType cbegin() const { return begin(); };
+    IteratorType end() const { return GetEndIterator(); };
+    const IteratorType cend() const { return end(); };
+
+    // If failed returns end()
+    // If succ - iterator to element found
+    IteratorType findKey(QueryListCharType keyStr)
+    {
+      for (auto item = std::begin(*this); item != std::end(*this); ++item)
+      {
+        if (item->key_.compare(keyStr) == 0)
+        {
+          return item;
+        }
+      }
+      return GetEndIterator();
+    }
 
     UriQueryListBase(const UriObjType& uri, UriDissectQueryMallocProc uriDissectQueryMallocProc, UriFreeQueryListProc uriFreeQueryListProc) :
       uriDissectQueryMallocProc_(uriDissectQueryMallocProc),
-      uriFreeQueryListProc_(uriFreeQueryListProc)
+      uriFreeQueryListProc_(uriFreeQueryListProc),
+      queryList_{},
+      itemCount_{}
     {
-      if (uriDissectQueryMallocProc_(&queryList_, &itemCount_, uri.query.first,
-        uri.query.afterLast) != URI_SUCCESS)
-      {
-        throw std::runtime_error("UriQueryList error: error parsing query array");
-      }
+      uriDissectQueryMallocProc_(&queryList_, &itemCount_, uri.query.first, uri.query.afterLast);
     }
 
     virtual ~UriQueryListBase()
@@ -138,6 +155,8 @@ namespace uri_parser
     }
 
   private:
+    IteratorType GetEndIterator() const { return IteratorType(nullptr); }
+
     int itemCount_;
     UriQueryListType* queryList_;
     UriDissectQueryMallocProc uriDissectQueryMallocProc_;
@@ -157,7 +176,7 @@ namespace uri_parser
     UriQueryList(UriQueryList&& right) :
       UriQueryListBase(std::move(right)){}
   };
-  
+
   template <class UrlTextType>
   class UriQueryList < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type> :
     public UriQueryListBase<UriQueryListStructA, std::wstring, UriUriW>
