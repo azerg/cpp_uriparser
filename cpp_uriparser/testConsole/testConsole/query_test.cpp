@@ -79,3 +79,17 @@ TEST(cppUriParser, find_key)
     EXPECT_TRUE(keyInvalid == query.end());
   });
 }
+
+TEST(cppUriParser, find_value)
+{
+  EXPECT_NO_THROW(
+  {
+    auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
+    auto query = entry.Query();
+    auto keyIt = query.findValue("http://domain.tld/");
+    EXPECT_STREQ(keyIt->key_.c_str(), "url");
+
+    auto keyInvalid = query.findValue("hello");
+    EXPECT_TRUE(keyInvalid == query.end());
+  });
+}

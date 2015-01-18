@@ -137,6 +137,18 @@ namespace uri_parser
       return GetEndIterator();
     }
 
+    IteratorType findValue(QueryListCharType valueStr)
+    {
+      for (auto item = std::begin(*this); item != std::end(*this); ++item)
+      {
+        if (item->value_.compare(valueStr) == 0)
+        {
+          return item;
+        }
+      }
+      return GetEndIterator();
+    }
+
     UriQueryListBase(const UriObjType& uri, UriDissectQueryMallocProc uriDissectQueryMallocProc, UriFreeQueryListProc uriFreeQueryListProc) :
       uriDissectQueryMallocProc_(uriDissectQueryMallocProc),
       uriFreeQueryListProc_(uriFreeQueryListProc),
