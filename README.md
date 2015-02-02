@@ -1,5 +1,6 @@
 cpp_uriparser
 =============
+С++ header-only library to parse urls, traverse through url parts, queries.
 cpp_uriparser is C++ wrapper for c [uriparser library].
 
 # Features
