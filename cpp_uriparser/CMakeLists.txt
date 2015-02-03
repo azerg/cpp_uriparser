@@ -9,6 +9,7 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
 set ( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin )
+set ( URIPARSER_FOLDER ${CMAKE_HOME_DIRECTORY}/dependencies/uriparser-0.8.1 )
 
 ##################################################################################################################
 project (cpp_uriparser_test)

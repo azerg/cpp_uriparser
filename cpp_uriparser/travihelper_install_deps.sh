@@ -1,0 +1,22 @@
+wget -c 'http://sourceforge.net/projects/boost/files/boost/1.50.0/boost_1_50_0.tar.bz2/download'
+tar xf download
+echo '-----boost downloaded & extracted-----'
+#-----------------------------------------------------------------
+GTEST_BUILD_NAME=gtest-1.7.0
+wget http://googletest.googlecode.com/files/$GTEST_BUILD_NAME.zip
+unzip $GTEST_BUILD_NAME.zip
+rm $GTEST_BUILD_NAME.zip
+cd $GTEST_BUILD_NAME/cmake
+cmake -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles" ..
+make
+cd ../../
+echo '-----gtest compiled-----'
+#-----------------------------------------------------------------
+# build uriparser lib for target system
+URIPARSER_NAME=uriparser-0.8.1
+TARGTET_DIR=$(readlink -f dependencies)
+cd dependencies/$URIPARSER_NAME
+./configure --disable-test --disable-doc --prefix=$TARGTET_DIR/$URIPARSER_NAME/deploy
+make install
+cd ../../
+echo '-----uriparser compiled-----'
