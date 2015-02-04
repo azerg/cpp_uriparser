@@ -22,6 +22,10 @@ if (WIN32)
 		endif()		
 	endforeach()
 	########################################################################
+	
+	if (MSVC)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
+	endif()
 else()
 	message ("---linking linux gtest libs")
 	target_link_libraries (${test_executable_name} ${GTEST_FOLDER}/cmake/libgtest.so)
