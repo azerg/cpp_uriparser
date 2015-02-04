@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "cpp_uriparser.h"
 #include <gtest/gtest.h>
 

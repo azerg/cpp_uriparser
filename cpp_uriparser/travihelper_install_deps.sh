@@ -1,9 +1,10 @@
-wget -c 'http://sourceforge.net/projects/boost/files/boost/1.50.0/boost_1_50_0.tar.bz2/download'
+wget -c 'http://sourceforge.net/projects/boost/files/boost/1.46.1/boost_1_46_1.tar.bz2/download'
 tar xf download
+rm download
 echo '-----boost downloaded & extracted-----'
 #-----------------------------------------------------------------
 GTEST_BUILD_NAME=gtest-1.7.0
-wget http://googletest.googlecode.com/files/$GTEST_BUILD_NAME.zip
+wget 'http://googletest.googlecode.com/files/'$GTEST_BUILD_NAME'.zip'
 unzip $GTEST_BUILD_NAME.zip
 rm $GTEST_BUILD_NAME.zip
 cd $GTEST_BUILD_NAME/cmake
