@@ -2,7 +2,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/noncopyable.hpp>
-#include <exception>
+#include <stdexcept>
 #include <iterator>
 #include <memory>
 #include "cpp_uriparser_query.h"
