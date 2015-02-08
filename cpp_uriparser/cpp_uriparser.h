@@ -10,16 +10,95 @@
 
 namespace uri_parser
 {
-  template <class UriTextRangeType, class UrlReturnType>
-  UrlReturnType GetStringFromUrlPartInternal(UriTextRangeType& range)
+  namespace internal
   {
-    if (range.first == nullptr || (range.afterLast == nullptr))
-    {
-      return UrlReturnType();
-    }
+    template <typename T>
+    struct base_type{
+      typedef typename std::remove_const<typename std::remove_pointer<T>::type>::type type;
+    };
 
-    return UrlReturnType(range.first, range.afterLast);
-  }
+    template <typename T>
+    struct base_const_ptr{
+      typedef typename std::add_pointer<typename std::add_const<typename base_type<T>::type>::type>::type type;
+    };
+
+    template <typename T>
+    struct base_ptr{
+      typedef typename std::add_pointer<typename base_type<T>::type>::type type;
+    };
+
+    // by default lets use ANSI api functions
+    template <class UrlTextType, class Empty = void>
+    struct UriTypes: private boost::noncopyable
+    {
+      typedef UriUriA UriObjType;
+      typedef UriParserStateA UriStateType;
+      typedef UriPathSegmentA UriPathSegmentType;
+      typedef std::string UrlReturnType;
+
+      std::function<int(UriStateType*, UrlTextType)> parseUri;
+      std::function<void(UriObjType*)> freeUriMembers;
+      std::function<int(UriObjType*)> uriNormalizeSyntax;
+      // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
+      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
+
+      UriTypes() :
+        parseUri(&uriParseUriA),
+        freeUriMembers(&uriFreeUriMembersA),
+        uriNormalizeSyntax(&uriNormalizeSyntaxA),
+        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExA)
+      {}
+
+      // todo: remove copypasted move method!
+      UriTypes(UriTypes&& right) :
+        parseUri(std::move(right.parseUri)),
+        freeUriMembers(std::move(right.freeUriMembers)),
+        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
+        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx))
+      {}
+    };
+
+    template <class UrlTextType>
+    struct UriTypes<UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type>:
+      private boost::noncopyable
+    {
+      typedef UriUriW UriObjType;
+      typedef UriParserStateW UriStateType;
+      typedef UriPathSegmentW UriPathSegmentType;
+      // hardcoded output type for wchar_t* to wstring
+      typedef std::wstring UrlReturnType;
+
+      std::function<int(UriStateType*, UrlTextType)> parseUri;
+      std::function<void(UriObjType*)> freeUriMembers;
+      std::function<int(UriObjType*)> uriNormalizeSyntax;
+      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
+
+      UriTypes() :
+        parseUri(&uriParseUriW),
+        freeUriMembers(&uriFreeUriMembersW),
+        uriNormalizeSyntax(&uriNormalizeSyntaxW),
+        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExW)
+      {}
+
+      UriTypes(UriTypes&& right) :
+        parseUri(std::move(right.parseUri)),
+        freeUriMembers(std::move(right.freeUriMembers)),
+        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
+        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx))
+      {}
+    };
+
+    template <class UriTextRangeType, class UrlReturnType>
+    UrlReturnType GetStringFromUrlPartInternal(UriTextRangeType& range)
+    {
+      if (range.first == nullptr || (range.afterLast == nullptr))
+      {
+        return UrlReturnType();
+      }
+
+      return UrlReturnType(range.first, range.afterLast);
+    }
+  } // namespace internal
 
   template <class UriPathSegmentType, class UrlReturnType>
   class UrlPathIterator: public std::iterator <std::forward_iterator_tag, UriPathSegmentType>
@@ -78,7 +157,7 @@ namespace uri_parser
     template <typename UriTextRangeTypeT>
     UrlReturnType GetStringFromUrlPart(UriTextRangeTypeT val) const
     {
-      return GetStringFromUrlPartInternal<UriTextRangeTypeT, UrlReturnType>(val);
+      return internal::GetStringFromUrlPartInternal<UriTextRangeTypeT, UrlReturnType>(val);
     }
 
     template <typename OutItType>
@@ -93,19 +172,39 @@ namespace uri_parser
     UrlReturnType returnObjStorage_;
   };
 
-  template <class UrlTextType, class UrlReturnType, class UriObjType, class UriStateType, class UriPathSegmentType>
-  class UriEntryBase: private boost::noncopyable
+  template <class UrlTextType>
+  class UriEntry: boost::noncopyable
   {
-    typedef std::function<int(UriStateType*, UrlTextType)> ParseUriProc;
-    typedef std::function<void(UriObjType*)> FreeUriMembersProc;
-    typedef std::function<int(UriObjType*)> UriNormalizeSyntaxProc;
-
+    typedef internal::UriTypes<UrlTextType> UriApiTypes;
+    typedef typename UriApiTypes::UriObjType UriObjType;
+    typedef typename UriApiTypes::UrlReturnType UrlReturnType;
+    typedef typename UriApiTypes::UriStateType UriStateType;
+    typedef typename UriApiTypes::UriPathSegmentType UriPathSegmentType;
   public:
-    virtual ~UriEntryBase()
+    UriEntry(UrlTextType urlText) :
+      freeMemoryOnClose_(true)
+    {
+      state_.uri = &uriObj_;
+      if (uriTypes_.parseUri(&state_, urlText) != URI_SUCCESS)
+      {
+        throw std::runtime_error("uriparser: Uri entry creation failed");
+      }
+    }
+
+    UriEntry(UriEntry&& right) :
+      state_(std::move(right.state_)),
+      uriObj_(std::move(right.uriObj_)),
+      uriTypes_(std::move(right.uriTypes_)),
+      freeMemoryOnClose_(true)
+    {
+      right.freeMemoryOnClose_ = false;
+    }
+
+    virtual ~UriEntry()
     {
       if (freeMemoryOnClose_)
       {
-        freeUriMembers_(&uriObj_);
+        uriTypes_.freeUriMembers(&uriObj_);
       }
     }
 
@@ -141,39 +240,31 @@ namespace uri_parser
 
     void Normalize()
     {
-      uriNormalizeSyntax_(&uriObj_);
+      uriTypes_.uriNormalizeSyntax(&uriObj_);
     }
 
-  protected:
-    UriEntryBase(UrlTextType urlText, ParseUriProc parseUri, FreeUriMembersProc freeUriMembers, UriNormalizeSyntaxProc uriNormalizeSyntax):
-      freeUriMembers_(freeUriMembers),
-      parseUri_(parseUri),
-      uriNormalizeSyntax_(uriNormalizeSyntax),
-      freeMemoryOnClose_(true)
+    boost::optional<UrlReturnType> GetUnescapedUrlString(bool plusToSpace, UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
     {
-      state_.uri = &uriObj_;
-      if (parseUri_(&state_, urlText) != URI_SUCCESS)
-      {
-        throw std::runtime_error("uriparser: Uri entry creation failed");
-      }
-    }
+      typedef std::remove_pointer<UrlTextType> UrlTextTypeNoPtr;
+      typedef std::remove_const<UrlTextTypeNoPtr> UrlTextTypeBase;
 
-    UriEntryBase(UriEntryBase&& right):
-      freeUriMembers_(std::move(right.freeUriMembers_)),
-      parseUri_(std::move(right.parseUri_)),
-      uriNormalizeSyntax_(std::move(right.uriNormalizeSyntax_)),
-      state_(std::move(right.state_)),
-      uriObj_(std::move(right.uriObj_)),
-      freeMemoryOnClose_(true)
-    {
-      right.freeMemoryOnClose_ = false;
+      UrlReturnType reslt(uriObj_.scheme.first);
+
+      UrlTextType endPtr = uriTypes_.uriUnescapeInPlaceEx(
+        &reslt.front(),
+        plusToSpace ? URI_TRUE : URI_FALSE,
+        breakConversion);
+
+      reslt.assign(reslt.c_str());
+
+      return boost::optional<UrlReturnType>(reslt);
     }
 
   private:
     template <class UriTextRangeType>
     boost::optional<UrlReturnType> GetStringFromUrlPart(UriTextRangeType range) const
     {
-      auto retVal = GetStringFromUrlPartInternal<UriTextRangeType, UrlReturnType>(range);
+      auto retVal = internal::GetStringFromUrlPartInternal<UriTextRangeType, UrlReturnType>(range);
       if (!retVal.empty())
       {
         return boost::optional<UrlReturnType>(retVal);
@@ -181,39 +272,11 @@ namespace uri_parser
       return boost::optional<UrlReturnType>();
     }
 
-    FreeUriMembersProc freeUriMembers_;
-    ParseUriProc parseUri_;
-    UriNormalizeSyntaxProc uriNormalizeSyntax_;
+    UriApiTypes uriTypes_;
 
     UriStateType state_;
     UriObjType uriObj_;
     bool freeMemoryOnClose_;
-  };
-
-
-  template <class UrlTextType, class Empty = void>
-  class UriEntry;
-
-  template <class UrlTextType>
-  class UriEntry < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const char*>::value >::type>:
-    public UriEntryBase<UrlTextType, std::string, UriUriA, UriParserStateA, UriPathSegmentA>
-  {
-  public:
-    explicit UriEntry(UrlTextType url):
-      UriEntryBase(url, &uriParseUriA, &uriFreeUriMembersA, &uriNormalizeSyntaxA){}
-    UriEntry(UriEntry&& right):
-      UriEntryBase(std::move(right)){}
-  };
-
-  template <class UrlTextType>
-  class UriEntry < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type>:
-    public UriEntryBase<UrlTextType, std::wstring, UriUriW, UriParserStateW, UriPathSegmentW>
-  {
-  public:
-    explicit UriEntry(UrlTextType url):
-      UriEntryBase(url, &uriParseUriW, &uriFreeUriMembersW, &uriNormalizeSyntaxW){}
-    UriEntry(UriEntry&& right):
-      UriEntryBase(std::move(right)){}
   };
 
   // Use this helper proc to create UriEntry obj

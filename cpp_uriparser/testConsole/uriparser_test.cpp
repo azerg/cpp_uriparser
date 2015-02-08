@@ -32,3 +32,24 @@ TEST(cppUriParser, traversing_through_url)
     }
   }
 }
+
+TEST(cppUriParser, unescape_test)
+{
+  const char* url = "http://www.example.com/name%20with%20spaces/lalala%01%FFg%0D%0A";
+  auto entry = uri_parser::UriParseUrl(url);
+
+  auto unescapedString = entry.GetUnescapedUrlString(true);
+  EXPECT_TRUE(unescapedString.is_initialized());
+  EXPECT_STREQ("http://www.example.com/name with spaces/lalala\x01\xffg\r\n", unescapedString.get().c_str());
+}
+
+TEST(cppUriParser, UriTypesMoveTest)
+{
+  typedef uri_parser::internal::UriTypes<wchar_t*> UriTypesChar;
+  UriTypesChar uriTypes;
+  EXPECT_FALSE(uriTypes.freeUriMembers._Empty());
+
+  std::unique_ptr<UriTypesChar> uriTypesEmpty(std::make_unique<UriTypesChar>(std::move(uriTypes)));
+  EXPECT_FALSE(uriTypesEmpty->freeUriMembers._Empty());
+  EXPECT_TRUE(uriTypes.freeUriMembers._Empty());
+}
