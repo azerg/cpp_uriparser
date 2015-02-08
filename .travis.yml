@@ -1,0 +1,17 @@
+language: cpp
+
+branches:
+ only:
+  - moving_to_cmake
+
+compiler:
+  - gcc
+before_script:
+  - cd cpp_uriparser
+  - ./travihelper_install_deps.sh
+  - ./cmake_build.sh
+script:
+  - cd build
+  - make
+  - cd ../bin
+  - ./cppUriparserTest
