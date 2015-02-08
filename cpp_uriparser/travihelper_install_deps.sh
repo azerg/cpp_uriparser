@@ -17,6 +17,7 @@ echo '-----gtest compiled-----'
 URIPARSER_NAME=uriparser-0.8.1
 TARGTET_DIR=$(readlink -f dependencies)
 cd dependencies/$URIPARSER_NAME
+chmod 777 configure
 ./configure --disable-test --disable-doc --prefix=$TARGTET_DIR/$URIPARSER_NAME/deploy
 make install
 cd ../../
