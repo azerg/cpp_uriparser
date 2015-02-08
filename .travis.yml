@@ -1,9 +1,5 @@
 language: cpp
 
-branches:
- only:
-  - moving_to_cmake
-
 compiler:
   - gcc
 before_script:
