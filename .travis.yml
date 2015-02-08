@@ -4,6 +4,8 @@ compiler:
   - gcc
 before_script:
   - cd cpp_uriparser
+  - chmod 777 travihelper_install_deps.sh
+  - chmod 777 cmake_build.sh
   - ./travihelper_install_deps.sh
   - ./cmake_build.sh
 script:
