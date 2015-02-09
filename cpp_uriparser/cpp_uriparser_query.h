@@ -118,10 +118,10 @@ namespace uri_parser
       return *this;
     }
 
-    IteratorType begin() const { return IteratorType(queryList_); };
-    const IteratorType cbegin() const { return begin(); };
-    IteratorType end() const { return GetEndIterator(); };
-    const IteratorType cend() const { return end(); };
+    IteratorType begin() const { return IteratorType(queryList_); }
+    const IteratorType cbegin() const { return begin(); }
+    IteratorType end() const { return GetEndIterator(); }
+    const IteratorType cend() const { return end(); }
 
     // If failed returns end()
     // If succ - iterator to element found
