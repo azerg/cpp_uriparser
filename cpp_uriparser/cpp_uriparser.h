@@ -10,96 +10,6 @@
 
 namespace uri_parser
 {
-  namespace internal
-  {
-    template <typename T>
-    struct base_type{
-      typedef typename std::remove_const<typename std::remove_pointer<T>::type>::type type;
-    };
-
-    template <typename T>
-    struct base_const_ptr{
-      typedef typename std::add_pointer<typename std::add_const<typename base_type<T>::type>::type>::type type;
-    };
-
-    template <typename T>
-    struct base_ptr{
-      typedef typename std::add_pointer<typename base_type<T>::type>::type type;
-    };
-
-    // by default lets use ANSI api functions
-    template <class UrlTextType, class Empty = void>
-    struct UriTypes: private boost::noncopyable
-    {
-      typedef UriUriA UriObjType;
-      typedef UriParserStateA UriStateType;
-      typedef UriPathSegmentA UriPathSegmentType;
-      typedef std::string UrlReturnType;
-
-      std::function<int(UriStateType*, UrlTextType)> parseUri;
-      std::function<void(UriObjType*)> freeUriMembers;
-      std::function<int(UriObjType*)> uriNormalizeSyntax;
-      // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
-      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
-
-      UriTypes() :
-        parseUri(&uriParseUriA),
-        freeUriMembers(&uriFreeUriMembersA),
-        uriNormalizeSyntax(&uriNormalizeSyntaxA),
-        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExA)
-      {}
-
-      // todo: remove copypasted move method!
-      UriTypes(UriTypes&& right) :
-        parseUri(std::move(right.parseUri)),
-        freeUriMembers(std::move(right.freeUriMembers)),
-        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
-        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx))
-      {}
-    };
-
-    template <class UrlTextType>
-    struct UriTypes<UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type>:
-      private boost::noncopyable
-    {
-      typedef UriUriW UriObjType;
-      typedef UriParserStateW UriStateType;
-      typedef UriPathSegmentW UriPathSegmentType;
-      // hardcoded output type for wchar_t* to wstring
-      typedef std::wstring UrlReturnType;
-
-      std::function<int(UriStateType*, UrlTextType)> parseUri;
-      std::function<void(UriObjType*)> freeUriMembers;
-      std::function<int(UriObjType*)> uriNormalizeSyntax;
-      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
-
-      UriTypes() :
-        parseUri(&uriParseUriW),
-        freeUriMembers(&uriFreeUriMembersW),
-        uriNormalizeSyntax(&uriNormalizeSyntaxW),
-        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExW)
-      {}
-
-      UriTypes(UriTypes&& right) :
-        parseUri(std::move(right.parseUri)),
-        freeUriMembers(std::move(right.freeUriMembers)),
-        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
-        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx))
-      {}
-    };
-
-    template <class UriTextRangeType, class UrlReturnType>
-    UrlReturnType GetStringFromUrlPartInternal(UriTextRangeType& range)
-    {
-      if (range.first == nullptr || (range.afterLast == nullptr))
-      {
-        return UrlReturnType();
-      }
-
-      return UrlReturnType(range.first, range.afterLast);
-    }
-  } // namespace internal
-
   template <class UriPathSegmentType, class UrlReturnType>
   class UrlPathIterator: public std::iterator <std::forward_iterator_tag, UriPathSegmentType>
   {
@@ -250,7 +160,7 @@ namespace uri_parser
 
       UrlReturnType reslt(uriObj_.scheme.first);
 
-      UrlTextType endPtr = uriTypes_.uriUnescapeInPlaceEx(
+      uriTypes_.uriUnescapeInPlaceEx(
         &reslt.front(),
         plusToSpace ? URI_TRUE : URI_FALSE,
         breakConversion);

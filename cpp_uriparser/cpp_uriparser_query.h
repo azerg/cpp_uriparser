@@ -8,6 +8,111 @@
 
 namespace uri_parser
 {
+  namespace internal
+  {
+    template <typename T>
+    struct base_type{
+      typedef typename std::remove_const<typename std::remove_pointer<T>::type>::type type;
+    };
+
+    template <typename T>
+    struct base_const_ptr{
+      typedef typename std::add_pointer<typename std::add_const<typename base_type<T>::type>::type>::type type;
+    };
+
+    template <typename T>
+    struct base_ptr{
+      typedef typename std::add_pointer<typename base_type<T>::type>::type type;
+    };
+
+    // by default lets use ANSI api functions
+    template <class UrlTextType, class Empty = void>
+    struct UriTypes
+    {
+      typedef UriUriA UriObjType;
+      typedef UriParserStateA UriStateType;
+      typedef UriPathSegmentA UriPathSegmentType;
+      typedef UriQueryListStructA UriQueryListType;
+      typedef std::string UrlReturnType;
+
+      std::function<int(UriStateType*, UrlTextType)> parseUri;
+      std::function<void(UriObjType*)> freeUriMembers;
+      std::function<int(UriObjType*)> uriNormalizeSyntax;
+      typedef decltype(UriQueryListType::key) QueryListCharType;
+      std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> uriDissectQueryMallocProc;
+      std::function<void(UriQueryListType*)> uriFreeQueryListProc;
+      // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
+      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
+
+      UriTypes() :
+        parseUri(&uriParseUriA),
+        freeUriMembers(&uriFreeUriMembersA),
+        uriNormalizeSyntax(&uriNormalizeSyntaxA),
+        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExA),
+        uriDissectQueryMallocProc(&uriDissectQueryMallocA),
+        uriFreeQueryListProc(&uriFreeQueryListA)
+      {}
+
+      // todo: remove copypasted move method!
+      UriTypes(UriTypes&& right) :
+        parseUri(std::move(right.parseUri)),
+        freeUriMembers(std::move(right.freeUriMembers)),
+        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
+        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx)),
+        uriDissectQueryMallocProc(std::move(right.uriDissectQueryMallocA)),
+        uriFreeQueryListProc(std::move(right.uriFreeQueryListA))
+      {}
+    };
+
+    template <class UrlTextType>
+    struct UriTypes<UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type>
+    {
+      typedef UriUriW UriObjType;
+      typedef UriParserStateW UriStateType;
+      typedef UriPathSegmentW UriPathSegmentType;
+      typedef UriQueryListStructW UriQueryListType;
+      // hardcoded output type for wchar_t* to wstring
+      typedef std::wstring UrlReturnType;
+
+      std::function<int(UriStateType*, UrlTextType)> parseUri;
+      std::function<void(UriObjType*)> freeUriMembers;
+      std::function<int(UriObjType*)> uriNormalizeSyntax;
+      std::function<int(UriQueryListType**, int*, UrlTextType, UrlTextType)> uriDissectQueryMallocProc;
+      std::function<void(UriQueryListType*)> uriFreeQueryListProc;
+      // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
+      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
+
+      UriTypes() :
+        parseUri(&uriParseUriW),
+        freeUriMembers(&uriFreeUriMembersW),
+        uriNormalizeSyntax(&uriNormalizeSyntaxW),
+        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExW),
+        uriDissectQueryMallocProc(&uriDissectQueryMallocW),
+        uriFreeQueryListProc(&uriFreeQueryListW)
+      {}
+
+      UriTypes(UriTypes&& right) :
+        parseUri(std::move(right.parseUri)),
+        freeUriMembers(std::move(right.freeUriMembers)),
+        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
+        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx)),
+        uriDissectQueryMallocProc(std::move(right.uriDissectQueryMallocA)),
+        uriFreeQueryListProc(std::move(right.uriFreeQueryListA))
+      {}
+    };
+
+    template <class UriTextRangeType, class UrlReturnType>
+    UrlReturnType GetStringFromUrlPartInternal(UriTextRangeType& range)
+    {
+      if (range.first == nullptr || (range.afterLast == nullptr))
+      {
+        return UrlReturnType();
+      }
+
+      return UrlReturnType(range.first, range.afterLast);
+    }
+  } // namespace internal
+
   template <class UrlReturnType>
   struct UriQueryEntry
   {
@@ -86,19 +191,18 @@ namespace uri_parser
     UriQueryEntry<UrlReturnType> returnObjStorage_;
   };
 
-
-  template <class UriQueryListType, class UrlReturnType, class UriObjType>
-  class UriQueryListBase
+  template <class UrlTextType>
+  class UriQueryList
   {
-    typedef decltype(UriQueryListType::key) QueryListCharType;
-    typedef std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> UriDissectQueryMallocProc;
-    typedef std::function<void(UriQueryListType*)> UriFreeQueryListProc;
+    typedef internal::UriTypes<UrlTextType> UriApiTypes;
+    typedef typename UriApiTypes::UriObjType UriObjType;
+    typedef typename UriApiTypes::UriQueryListType UriQueryListType;
+    typedef typename UriApiTypes::UrlReturnType UrlReturnType;
     typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
   public:
-    UriQueryListBase(UriQueryListBase&& right):
+    UriQueryList(UriQueryList&& right) :
       itemCount_(std::move(right.itemCount_)),
-      uriFreeQueryListProc_(std::move(right.uriFreeQueryListProc_)),
-      uriDissectQueryMallocProc_(std::move(right.uriDissectQueryMallocProc_)),
+      uriTypes_(std::move(right.uriTypes_)),
       queryList_(std::move(right.queryList_))
     {
       // we have to cleaup right ptr, not to free it in right's destructor
@@ -108,11 +212,10 @@ namespace uri_parser
     bool empty() const { return itemCount_ == 0; }
     int size() const { return itemCount_; }
 
-    UriQueryListBase& operator=(UriQueryListBase&& right)
+    UriQueryList& operator=(UriQueryList&& right)
     {
       std::swap(this->itemCount_, right.itemCount_);
-      std::swap(this->uriDissectQueryMallocProc_, right.uriDissectQueryMallocProc_);
-      std::swap(this->uriFreeQueryListProc_, right.uriFreeQueryListProc_);
+      std::swap(this->uriTypes_, right.uriTypes_);
       this->queryList_ = right.queryList_;
       right.queryList_ = nullptr;
       return *this;
@@ -125,7 +228,7 @@ namespace uri_parser
 
     // If failed returns end()
     // If succ - iterator to element found
-    IteratorType findKey(QueryListCharType keyStr)
+    IteratorType findKey(UrlTextType keyStr)
     {
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
@@ -137,7 +240,7 @@ namespace uri_parser
       return GetEndIterator();
     }
 
-    IteratorType findValue(QueryListCharType valueStr)
+    IteratorType findValue(UrlTextType valueStr)
     {
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
@@ -149,20 +252,18 @@ namespace uri_parser
       return GetEndIterator();
     }
 
-    UriQueryListBase(const UriObjType& uri, UriDissectQueryMallocProc uriDissectQueryMallocProc, UriFreeQueryListProc uriFreeQueryListProc) :
-      uriDissectQueryMallocProc_(uriDissectQueryMallocProc),
-      uriFreeQueryListProc_(uriFreeQueryListProc),
+    UriQueryList(const UriObjType& uri) :
       queryList_{},
       itemCount_{}
     {
-      uriDissectQueryMallocProc_(&queryList_, &itemCount_, uri.query.first, uri.query.afterLast);
+      uriTypes_.uriDissectQueryMallocProc(&queryList_, &itemCount_, uri.query.first, uri.query.afterLast);
     }
 
-    virtual ~UriQueryListBase()
+    virtual ~UriQueryList()
     {
       if (queryList_ != nullptr)
       {
-        uriFreeQueryListProc_(queryList_);
+        uriTypes_.uriFreeQueryListProc(queryList_);
       }
     }
 
@@ -170,33 +271,7 @@ namespace uri_parser
     IteratorType GetEndIterator() const { return IteratorType(nullptr); }
 
     int itemCount_;
+    UriApiTypes uriTypes_;
     UriQueryListType* queryList_;
-    UriDissectQueryMallocProc uriDissectQueryMallocProc_;
-    UriFreeQueryListProc uriFreeQueryListProc_;
-  };
-
-  template <class UrlTextType, class Empty = void>
-  class UriQueryList;
-
-  template <class UrlTextType>
-  class UriQueryList < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const char*>::value >::type> :
-    public UriQueryListBase<UriQueryListStructA, std::string, UriUriA>
-  {
-  public:
-    explicit UriQueryList(const UriUriA& uri):
-      UriQueryListBase(uri, &uriDissectQueryMallocA, &uriFreeQueryListA){}
-    UriQueryList(UriQueryList&& right) :
-      UriQueryListBase(std::move(right)){}
-  };
-
-  template <class UrlTextType>
-  class UriQueryList < UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type> :
-    public UriQueryListBase<UriQueryListStructA, std::wstring, UriUriW>
-  {
-  public:
-    explicit UriQueryList(UriUriW& uri) :
-      UriQueryListBase(uri, &uriDissectQueryMallocW, &uriFreeQueryListW){}
-    UriQueryList(UriQueryList&& right) :
-      UriQueryListBase(std::move(right)){}
   };
 } // namespace uri_parser
