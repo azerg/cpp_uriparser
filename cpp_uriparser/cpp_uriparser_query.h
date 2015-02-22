@@ -39,28 +39,19 @@ namespace uri_parser
       std::function<void(UriObjType*)> freeUriMembers;
       std::function<int(UriObjType*)> uriNormalizeSyntax;
       typedef decltype(UriQueryListType::key) QueryListCharType;
-      std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> uriDissectQueryMallocProc;
-      std::function<void(UriQueryListType*)> uriFreeQueryListProc;
+      std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> uriDissectQueryMalloc;
+      std::function<void(UriQueryListType*)> uriFreeQueryList;
       // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
-      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
+      std::function<typename base_const_ptr<UrlTextType>::type
+        (typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
 
       UriTypes() :
         parseUri(&uriParseUriA),
         freeUriMembers(&uriFreeUriMembersA),
         uriNormalizeSyntax(&uriNormalizeSyntaxA),
         uriUnescapeInPlaceEx(&uriUnescapeInPlaceExA),
-        uriDissectQueryMallocProc(&uriDissectQueryMallocA),
-        uriFreeQueryListProc(&uriFreeQueryListA)
-      {}
-
-      // todo: remove copypasted move method!
-      UriTypes(UriTypes&& right) :
-        parseUri(std::move(right.parseUri)),
-        freeUriMembers(std::move(right.freeUriMembers)),
-        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
-        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx)),
-        uriDissectQueryMallocProc(std::move(right.uriDissectQueryMallocA)),
-        uriFreeQueryListProc(std::move(right.uriFreeQueryListA))
+        uriDissectQueryMalloc(&uriDissectQueryMallocA),
+        uriFreeQueryList(&uriFreeQueryListA)
       {}
     };
 
@@ -77,8 +68,8 @@ namespace uri_parser
       std::function<int(UriStateType*, UrlTextType)> parseUri;
       std::function<void(UriObjType*)> freeUriMembers;
       std::function<int(UriObjType*)> uriNormalizeSyntax;
-      std::function<int(UriQueryListType**, int*, UrlTextType, UrlTextType)> uriDissectQueryMallocProc;
-      std::function<void(UriQueryListType*)> uriFreeQueryListProc;
+      std::function<int(UriQueryListType**, int*, UrlTextType, UrlTextType)> uriDissectQueryMalloc;
+      std::function<void(UriQueryListType*)> uriFreeQueryList;
       // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
       std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
 
@@ -87,17 +78,8 @@ namespace uri_parser
         freeUriMembers(&uriFreeUriMembersW),
         uriNormalizeSyntax(&uriNormalizeSyntaxW),
         uriUnescapeInPlaceEx(&uriUnescapeInPlaceExW),
-        uriDissectQueryMallocProc(&uriDissectQueryMallocW),
-        uriFreeQueryListProc(&uriFreeQueryListW)
-      {}
-
-      UriTypes(UriTypes&& right) :
-        parseUri(std::move(right.parseUri)),
-        freeUriMembers(std::move(right.freeUriMembers)),
-        uriNormalizeSyntax(std::move(right.uriNormalizeSyntax)),
-        uriUnescapeInPlaceEx(std::move(right.uriUnescapeInPlaceEx)),
-        uriDissectQueryMallocProc(std::move(right.uriDissectQueryMallocA)),
-        uriFreeQueryListProc(std::move(right.uriFreeQueryListA))
+        uriDissectQueryMalloc(&uriDissectQueryMallocW),
+        uriFreeQueryList(&uriFreeQueryListW)
       {}
     };
 
@@ -221,10 +203,10 @@ namespace uri_parser
       return *this;
     }
 
-    IteratorType begin() const { return IteratorType(queryList_); }
-    const IteratorType cbegin() const { return begin(); }
-    IteratorType end() const { return GetEndIterator(); }
-    const IteratorType cend() const { return end(); }
+    IteratorType begin() const { return IteratorType(queryList_); };
+    const IteratorType cbegin() const { return begin(); };
+    IteratorType end() const { return GetEndIterator(); };
+    const IteratorType cend() const { return end(); };
 
     // If failed returns end()
     // If succ - iterator to element found
@@ -256,14 +238,14 @@ namespace uri_parser
       queryList_{},
       itemCount_{}
     {
-      uriTypes_.uriDissectQueryMallocProc(&queryList_, &itemCount_, uri.query.first, uri.query.afterLast);
+      uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount_, uri.query.first, uri.query.afterLast);
     }
 
     virtual ~UriQueryList()
     {
       if (queryList_ != nullptr)
       {
-        uriTypes_.uriFreeQueryListProc(queryList_);
+        uriTypes_.uriFreeQueryList(queryList_);
       }
     }
 
@@ -274,4 +256,14 @@ namespace uri_parser
     UriApiTypes uriTypes_;
     UriQueryListType* queryList_;
   };
+
+  // free helper functions
+  template <class UrlTextType, class UrlReturnType>
+  bool UnescapeString(UrlTextType srcStrBegin, UrlTextType srcStrEnd, UrlReturnType& retVal)
+  {
+    std::function<typename internal::base_const_ptr<UrlTextType>::type
+      (typename internal::base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)>  uriUnescapeInPlaceEx;
+    return true;
+  }
+
 } // namespace uri_parser

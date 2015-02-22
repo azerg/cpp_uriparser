@@ -183,7 +183,6 @@ namespace uri_parser
     }
 
     UriApiTypes uriTypes_;
-
     UriStateType state_;
     UriObjType uriObj_;
     bool freeMemoryOnClose_;
