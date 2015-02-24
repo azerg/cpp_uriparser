@@ -17,6 +17,10 @@ namespace uri_parser
   public:
     explicit UrlPathIterator(UriPathSegmentType pathSegment):
       pathSegment_(pathSegment){}
+    UrlPathIterator()
+    {
+      pathSegment_ = CrteateEmptySegment();
+    }
     UrlPathIterator(const UrlPathIterator& mit):
       pathSegment_(mit.pathSegment_),
       returnObjStorage_(mit.returnObjStorage_){}
@@ -73,9 +77,13 @@ namespace uri_parser
     template <typename OutItType>
     OutItType CreateEndIt() const
     {
+      return OutItType(CrteateEmptySegment());
+    }
+
+    UriPathSegmentType CrteateEmptySegment() const
+    {
       decltype(pathSegment_.text) endTextRange = {nullptr, nullptr};
-      UriPathSegmentType endPathSegment = {endTextRange, nullptr, nullptr};
-      return OutItType(endPathSegment);
+      return {endTextRange, nullptr, nullptr};
     }
 
     UriPathSegmentType pathSegment_;
@@ -145,6 +153,10 @@ namespace uri_parser
 
     UrlPathIterator<UriPathSegmentType, UrlReturnType> PathHead() const
     {
+      if (uriObj_.pathHead)
+      {
+        return UrlPathIterator<UriPathSegmentType, UrlReturnType>();
+      }
       return UrlPathIterator<UriPathSegmentType, UrlReturnType>(*uriObj_.pathHead);
     }
 
@@ -153,21 +165,14 @@ namespace uri_parser
       uriTypes_.uriNormalizeSyntax(&uriObj_);
     }
 
-    boost::optional<UrlReturnType> GetUnescapedUrlString(bool plusToSpace, UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
+    UrlReturnType GetUnescapedUrlString(bool plusToSpace = true, UriBreakConversion breakConversion = URI_BR_DONT_TOUCH) const
     {
-      typedef std::remove_pointer<UrlTextType> UrlTextTypeNoPtr;
-      typedef std::remove_const<UrlTextTypeNoPtr> UrlTextTypeBase;
+      UrlReturnType reslt;
 
-      UrlReturnType reslt(uriObj_.scheme.first);
+      if (!UnescapeString(uriObj_.scheme.first, reslt, plusToSpace, breakConversion))
+        return UrlReturnType();
 
-      uriTypes_.uriUnescapeInPlaceEx(
-        &reslt.front(),
-        plusToSpace ? URI_TRUE : URI_FALSE,
-        breakConversion);
-
-      reslt.assign(reslt.c_str());
-
-      return boost::optional<UrlReturnType>(reslt);
+      return reslt;
     }
 
   private:

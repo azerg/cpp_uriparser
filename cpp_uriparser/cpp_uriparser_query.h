@@ -259,10 +259,28 @@ namespace uri_parser
 
   // free helper functions
   template <class UrlTextType, class UrlReturnType>
-  bool UnescapeString(UrlTextType srcStrBegin, UrlTextType srcStrEnd, UrlReturnType& retVal)
+  bool UnescapeString(
+    UrlTextType srcStrBegin,
+    UrlReturnType& retVal,
+    bool plusToSpace = true,
+    UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
   {
-    std::function<typename internal::base_const_ptr<UrlTextType>::type
-      (typename internal::base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)>  uriUnescapeInPlaceEx;
+    typedef typename internal::base_const_ptr<UrlTextType>::type(*uriUnescapeInPlaceEx)
+      (typename internal::base_ptr<UrlTextType>::type, UriBool, UriBreakConversion);
+
+    UrlReturnType reslt(srcStrBegin);
+
+    uriUnescapeInPlaceEx uriUnescapeInPlaceExProc =
+      std::is_convertible<UrlTextType, const char*>::value ?
+      (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExA : (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExW;
+
+    uriUnescapeInPlaceExProc(
+      &reslt.front(),
+      plusToSpace ? URI_TRUE : URI_FALSE,
+      breakConversion);
+
+    retVal = &reslt.front();
+
     return true;
   }
 

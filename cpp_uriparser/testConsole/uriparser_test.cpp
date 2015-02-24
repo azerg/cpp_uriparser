@@ -38,9 +38,9 @@ TEST(cppUriParser, unescape_test)
   const char* url = "http://www.example.com/name%20with%20spaces/lalala%01%FFg%0D%0A";
   auto entry = uri_parser::UriParseUrl(url);
 
-  auto unescapedString = entry.GetUnescapedUrlString(true);
-  EXPECT_TRUE(unescapedString.is_initialized());
-  EXPECT_STREQ("http://www.example.com/name with spaces/lalala\x01\xffg\r\n", unescapedString.get().c_str());
+  auto unescapedString = entry.GetUnescapedUrlString();
+  EXPECT_FALSE(unescapedString.empty());
+  EXPECT_STREQ("http://www.example.com/name with spaces/lalala\x01\xffg\r\n", unescapedString.c_str());
 }
 
 TEST(cppUriParser, DISABLED_UriTypesMoveTest)
