@@ -43,6 +43,24 @@ TEST(cppUriParser, unescape_test)
   EXPECT_STREQ("http://www.example.com/name with spaces/lalala\x01\xffg\r\n", unescapedString.c_str());
 }
 
+TEST(cppUriParser, unescaping_fragment)
+{
+  {
+    const wchar_t* url = L"https://www.google.com/webhp?lala=la#q=%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82";
+    auto entry = uri_parser::UriParseUrl(url);
+    auto frag = entry.GetUnescapedFragment();
+
+    EXPECT_TRUE(frag.is_initialized());
+    EXPECT_STREQ(frag.get().c_str(), L"q=\xd0\xbf\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82");
+  }
+  const char* url = "https://www.google.com/webhp?lala=la#q=%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82";
+  auto entry = uri_parser::UriParseUrl(url);
+  auto frag = entry.GetUnescapedFragment();
+
+  EXPECT_TRUE(frag.is_initialized());
+  EXPECT_STREQ(frag.get().c_str(), "q=\xd0\xbf\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82");
+}
+
 TEST(cppUriParser, DISABLED_UriTypesMoveTest)
 {
   typedef uri_parser::internal::UriTypes<wchar_t*> UriTypesChar;

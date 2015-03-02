@@ -165,14 +165,24 @@ namespace uri_parser
       uriTypes_.uriNormalizeSyntax(&uriObj_);
     }
 
+    boost::optional<UrlReturnType> GetUnescapedFragment(bool plusToSpace = true, UriBreakConversion breakConversion = URI_BR_DONT_TOUCH) const
+    {
+      auto frag = GetStringFromUrlPart(uriObj_.fragment);
+      if (!frag.is_initialized())
+      {
+        return frag;
+      }
+
+      UrlReturnType retVal;
+      return UnescapeString(frag.get().c_str(), retVal, plusToSpace, breakConversion)
+        ? boost::optional<UrlReturnType>(retVal)
+        : boost::optional<UrlReturnType>();
+    }
+
     UrlReturnType GetUnescapedUrlString(bool plusToSpace = true, UriBreakConversion breakConversion = URI_BR_DONT_TOUCH) const
     {
       UrlReturnType reslt;
-
-      if (!UnescapeString(uriObj_.scheme.first, reslt, plusToSpace, breakConversion))
-        return UrlReturnType();
-
-      return reslt;
+      return UnescapeString(uriObj_.scheme.first, reslt, plusToSpace, breakConversion) ? reslt : UrlReturnType();
     }
 
   private:

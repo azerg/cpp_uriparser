@@ -270,6 +270,11 @@ namespace uri_parser
 
     UrlReturnType reslt(srcStrBegin);
 
+    if (reslt.empty())
+    {
+      return false;
+    }
+
     uriUnescapeInPlaceEx uriUnescapeInPlaceExProc =
       std::is_convertible<UrlTextType, const char*>::value ?
       (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExA : (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExW;
