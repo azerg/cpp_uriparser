@@ -374,7 +374,7 @@ pkginclude_HEADERS = \
 	include/uriparser/UriDefsUnicode.h \
 	include/uriparser/UriIp4.h
 
-liburiparser_la_LDFLAGS = -version-info 1:17:0 $(am__append_1)
+liburiparser_la_LDFLAGS = -version-info 1:18:0 $(am__append_1)
 liburiparser_la_SOURCES = \
 	src/UriCommon.c \
 	src/UriCommon.h \
