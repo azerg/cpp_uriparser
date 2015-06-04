@@ -14,7 +14,7 @@ cd ../../
 echo '-----gtest compiled-----'
 #-----------------------------------------------------------------
 # build uriparser lib for target system
-URIPARSER_NAME=uriparser-0.8.1
+URIPARSER_NAME=uriparser-0.8.2
 TARGTET_DIR=$(readlink -f dependencies)
 cd dependencies/$URIPARSER_NAME
 chmod 777 configure
