@@ -70,6 +70,6 @@ TEST(cppUriParser, DISABLED_UriTypesMoveTest)
 
   std::unique_ptr<UriTypesChar> uriTypesEmpty(std::make_unique<UriTypesChar>(std::move(uriTypes)));
   EXPECT_FALSE(uriTypesEmpty->freeUriMembers);
-  EXPECT_TRUE(uriTypes.freeUriMembers);
-  */
+  EXPECT_TRUE(uriTypes.freeUriMembers);*/
+
 }

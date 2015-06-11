@@ -3,6 +3,7 @@
 #include <exception>
 #include <iostream>
 #include <iterator>
+#include <string>
 #include <type_traits>
 #include "uriparser/Uri.h"
 
@@ -25,62 +26,46 @@ namespace uri_parser
       typedef typename std::add_pointer<typename base_type<T>::type>::type type;
     };
 
+    // default API types
+#define URI_API_TYPES(PREFIX) \
+      typedef UriUri##PREFIX UriObjType; \
+      typedef UriParserState##PREFIX UriStateType; \
+      typedef UriPathSegment##PREFIX UriPathSegmentType; \
+      typedef UriQueryListStruct##PREFIX UriQueryListType; \
+      \
+      std::function<int(UriStateType*, UrlTextType)> parseUri;  \
+      std::function<void(UriObjType*)> freeUriMembers;  \
+      std::function<int(UriObjType*)> uriNormalizeSyntax; \
+      typedef decltype(UriQueryListType::key) QueryListCharType;  \
+      std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> uriDissectQueryMalloc; \
+      std::function<void(UriQueryListType*)> uriFreeQueryList;  \
+      /* add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )*/ \
+      std::function<typename base_const_ptr<UrlTextType>::type  \
+        (typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;  \
+        \
+      UriTypes() :  \
+        parseUri(&uriParseUri##PREFIX),  \
+        freeUriMembers(&uriFreeUriMembers##PREFIX),  \
+        uriNormalizeSyntax(&uriNormalizeSyntax##PREFIX), \
+        uriUnescapeInPlaceEx(&uriUnescapeInPlaceEx##PREFIX), \
+        uriDissectQueryMalloc(&uriDissectQueryMalloc##PREFIX), \
+        uriFreeQueryList(&uriFreeQueryList##PREFIX)  \
+     {}
+
+
     // by default lets use ANSI api functions
     template <class UrlTextType, class Empty = void>
     struct UriTypes
     {
-      typedef UriUriA UriObjType;
-      typedef UriParserStateA UriStateType;
-      typedef UriPathSegmentA UriPathSegmentType;
-      typedef UriQueryListStructA UriQueryListType;
       typedef std::string UrlReturnType;
-
-      std::function<int(UriStateType*, UrlTextType)> parseUri;
-      std::function<void(UriObjType*)> freeUriMembers;
-      std::function<int(UriObjType*)> uriNormalizeSyntax;
-      typedef decltype(UriQueryListType::key) QueryListCharType;
-      std::function<int(UriQueryListType**, int*, QueryListCharType, QueryListCharType)> uriDissectQueryMalloc;
-      std::function<void(UriQueryListType*)> uriFreeQueryList;
-      // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
-      std::function<typename base_const_ptr<UrlTextType>::type
-        (typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
-
-      UriTypes() :
-        parseUri(&uriParseUriA),
-        freeUriMembers(&uriFreeUriMembersA),
-        uriNormalizeSyntax(&uriNormalizeSyntaxA),
-        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExA),
-        uriDissectQueryMalloc(&uriDissectQueryMallocA),
-        uriFreeQueryList(&uriFreeQueryListA)
-      {}
+      URI_API_TYPES(A)
     };
 
     template <class UrlTextType>
     struct UriTypes<UrlTextType, typename std::enable_if<std::is_convertible<UrlTextType, const wchar_t*>::value >::type>
     {
-      typedef UriUriW UriObjType;
-      typedef UriParserStateW UriStateType;
-      typedef UriPathSegmentW UriPathSegmentType;
-      typedef UriQueryListStructW UriQueryListType;
-      // hardcoded output type for wchar_t* to wstring
       typedef std::wstring UrlReturnType;
-
-      std::function<int(UriStateType*, UrlTextType)> parseUri;
-      std::function<void(UriObjType*)> freeUriMembers;
-      std::function<int(UriObjType*)> uriNormalizeSyntax;
-      std::function<int(UriQueryListType**, int*, UrlTextType, UrlTextType)> uriDissectQueryMalloc;
-      std::function<void(UriQueryListType*)> uriFreeQueryList;
-      // add_const to support UrlTextType == tchar* & const tchar* ( api output is exactly const tchar* )
-      std::function<typename base_const_ptr<UrlTextType>::type(typename base_ptr<UrlTextType>::type, UriBool, UriBreakConversion)> uriUnescapeInPlaceEx;
-
-      UriTypes() :
-        parseUri(&uriParseUriW),
-        freeUriMembers(&uriFreeUriMembersW),
-        uriNormalizeSyntax(&uriNormalizeSyntaxW),
-        uriUnescapeInPlaceEx(&uriUnescapeInPlaceExW),
-        uriDissectQueryMalloc(&uriDissectQueryMallocW),
-        uriFreeQueryList(&uriFreeQueryListW)
-      {}
+      URI_API_TYPES(W)
     };
 
     template <class UriTextRangeType, class UrlReturnType>
@@ -284,8 +269,7 @@ namespace uri_parser
       plusToSpace ? URI_TRUE : URI_FALSE,
       breakConversion);
 
-    retVal = &reslt.front();
-
+    retVal = std::move(reslt);
     return true;
   }
 
