@@ -3,6 +3,7 @@
 
 using namespace uri_parser;
 
+/*
 TEST(cppUriParser, traversing_through_query)
 {
   auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
@@ -91,4 +92,16 @@ TEST(cppUriParser, find_value)
     auto keyInvalid = query.findValue("hello");
     EXPECT_TRUE(keyInvalid == query.end());
   });
+}
+*/
+TEST(cppUriParser, basic_query_test)
+{
+  auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
+  auto query = entry.GetQuery();
+
+  for (auto item = std::begin(query); item != std::end(query); ++item)
+  {
+    ADD_FAILURE();
+  }
+  SUCCEED();
 }

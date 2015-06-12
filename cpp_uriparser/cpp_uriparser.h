@@ -4,6 +4,7 @@
 #include <boost/noncopyable.hpp>
 #include <stdexcept>
 #include <iterator>
+#include <vector>
 #include <memory>
 #include "cpp_uriparser_query.h"
 #include "uriparser/Uri.h"
@@ -90,6 +91,13 @@ namespace uri_parser
     UrlReturnType returnObjStorage_;
   };
 
+  template <class UrlReturnType>
+  struct UriQueryItem
+  {
+    UrlReturnType key;
+    UrlReturnType value;
+  };
+
   template <class UrlTextType>
   class UriEntry: boost::noncopyable
   {
@@ -97,6 +105,7 @@ namespace uri_parser
     typedef typename UriApiTypes::UriObjType UriObjType;
     typedef typename UriApiTypes::UrlReturnType UrlReturnType;
     typedef typename UriApiTypes::UriStateType UriStateType;
+    typedef typename UriApiTypes::UriQueryListType UriQueryListType;
     typedef typename UriApiTypes::UriPathSegmentType UriPathSegmentType;
   public:
     UriEntry(UrlTextType urlText) :
@@ -141,9 +150,33 @@ namespace uri_parser
       return GetStringFromUrlPart(uriObj_.hostText);
     }
 
-    UriQueryList<UrlTextType> Query() const
+    typedef std::vector<UriQueryItem<UrlReturnType>> QueryContainerType;
+    QueryContainerType& GetQuery()
     {
-      return UriQueryList<UrlTextType>(uriObj_);
+      int itemCount;
+
+      uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount, uriObj_.query.first, uriObj_.query.afterLast);
+
+      UriQueryListType* curQuery = queryList_;
+      UriQueryItem<UrlReturnType> keyValue;
+
+      for (auto itemIdx = 0; itemIdx < itemCount; ++itemIdx)
+      {
+        if (curQuery->key)
+        {
+          keyValue.key = curQuery->key;
+        }
+
+        if (curQuery->value)
+        {
+          keyValue.value = curQuery->value;
+        }
+
+        query_.push_back(std::move(keyValue));
+        curQuery = curQuery->next;
+      }
+
+      return query_;
     }
 
     boost::optional<UrlReturnType> Fragment() const
@@ -201,6 +234,8 @@ namespace uri_parser
     UriStateType state_;
     UriObjType uriObj_;
     bool freeMemoryOnClose_;
+    UriQueryListType* queryList_;
+    QueryContainerType query_;
   };
 
   // Use this helper proc to create UriEntry obj
