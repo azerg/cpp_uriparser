@@ -150,10 +150,14 @@ namespace uri_parser
       return GetStringFromUrlPart(uriObj_.hostText);
     }
 
+    
     typedef std::vector<UriQueryItem<UrlReturnType>> QueryContainerType;
-    QueryContainerType& GetQuery()
+    // todo(azerg): move container type as template parameter
+    QueryContainerType GetQuery()
     {
       int itemCount;
+      QueryContainerType query_;
+      UriQueryListType* queryList_{};
 
       uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount, uriObj_.query.first, uriObj_.query.afterLast);
 
@@ -162,6 +166,7 @@ namespace uri_parser
 
       for (auto itemIdx = 0; itemIdx < itemCount; ++itemIdx)
       {
+        keyValue = {};
         if (curQuery->key)
         {
           keyValue.key = curQuery->key;
@@ -176,7 +181,12 @@ namespace uri_parser
         curQuery = curQuery->next;
       }
 
-      return query_;
+      if (queryList_ != nullptr)
+      {
+        uriTypes_.uriFreeQueryList(queryList_);
+      }
+
+      return std::move(query_);
     }
 
     boost::optional<UrlReturnType> Fragment() const
@@ -234,8 +244,6 @@ namespace uri_parser
     UriStateType state_;
     UriObjType uriObj_;
     bool freeMemoryOnClose_;
-    UriQueryListType* queryList_;
-    QueryContainerType query_;
   };
 
   // Use this helper proc to create UriEntry obj
