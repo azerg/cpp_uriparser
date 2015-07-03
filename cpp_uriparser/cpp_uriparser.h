@@ -186,7 +186,7 @@ namespace uri_parser
         uriTypes_.uriFreeQueryList(queryList_);
       }
 
-      return std::move(query_);
+      return query_;
     }
 
     boost::optional<UrlReturnType> Fragment() const

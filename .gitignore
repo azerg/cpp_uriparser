@@ -27,3 +27,4 @@
 *.out
 *.app
 cpp_uriparser/build/
+cpp_uriparser/bin/

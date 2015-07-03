@@ -4,23 +4,6 @@
 using namespace uri_parser;
 
 /*
-TEST(cppUriParser, empty_query)
-{
-  EXPECT_NO_THROW(
-  {
-    auto entry = uri_parser::UriParseUrl("http://lol.wat/post");
-    auto query = entry.Query();
-    EXPECT_TRUE(query.empty());
-  });
-}
-
-TEST(cppUriParser, query_size)
-{
-  const char* url = "http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla";
-  auto entry = uri_parser::UriParseUrl(url);
-  EXPECT_EQ(entry.Query().size(), 4);
-}
-
 TEST(cppUriParser, find_key)
 {
   EXPECT_NO_THROW(
@@ -49,6 +32,23 @@ TEST(cppUriParser, find_value)
   });
 }
 */
+TEST(cppUriParser, query_size)
+{
+  const char* url = "http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla";
+  auto entry = uri_parser::UriParseUrl(url);
+  EXPECT_EQ(entry.GetQuery().size(), 4);
+}
+
+TEST(cppUriParser, empty_query)
+{
+  EXPECT_NO_THROW(
+  {
+    auto entry = uri_parser::UriParseUrl("http://lol.wat/post");
+    auto query = entry.GetQuery();
+    EXPECT_TRUE(query.empty());
+  });
+}
+
 TEST(cppUriParser, basic_query_test)
 {
   auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
