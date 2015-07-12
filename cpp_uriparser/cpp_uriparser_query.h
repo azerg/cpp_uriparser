@@ -104,7 +104,7 @@ namespace uri_parser
           return item;
         }
       }
-      return end();
+      return std::vector<UriQueryItem<UrlReturnType>>::end();
     }
 
     QueryItemType findValue(UrlReturnType valueStr) const
@@ -116,7 +116,7 @@ namespace uri_parser
           return item;
         }
       }
-      return end();
+      return std::vector<UriQueryItem<UrlReturnType>>::end();
     }
   };
 
