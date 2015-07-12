@@ -6,6 +6,7 @@
 #include <iterator>
 #include <vector>
 #include <memory>
+#include <atomic>
 #include "cpp_uriparser_query.h"
 #include "uriparser/Uri.h"
 
@@ -91,13 +92,6 @@ namespace uri_parser
     UrlReturnType returnObjStorage_;
   };
 
-  template <class UrlReturnType>
-  struct UriQueryItem
-  {
-    UrlReturnType key;
-    UrlReturnType value;
-  };
-
   template <class UrlTextType>
   class UriEntry: boost::noncopyable
   {
@@ -150,22 +144,31 @@ namespace uri_parser
       return GetStringFromUrlPart(uriObj_.hostText);
     }
 
-    
-    typedef std::vector<UriQueryItem<UrlReturnType>> QueryContainerType;
-    // todo(azerg): move container type as template parameter
-    QueryContainerType GetQuery()
+    const UriQuery<UrlReturnType>& GetQuery()
     {
+      if (lazy_query_.is_initialized())
+      {
+        return lazy_query_.get();
+      }
       int itemCount;
-      QueryContainerType query_;
-      UriQueryListType* queryList_{};
+      UriQueryListType* queryList_;
 
       if (uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount, uriObj_.query.first, uriObj_.query.afterLast) != 0)
       {
-        return QueryContainerType();
+        static const UriQuery<UrlReturnType> empty;
+        return empty;
       }
 
-      UriQueryListType* curQuery = queryList_;
+      UriQueryListType* curQuery{queryList_};
       UriQueryItem<UrlReturnType> keyValue;
+
+      // initializing query object once for the first time
+      lazy_query_ = UriQuery<UrlReturnType>();
+
+      if (itemCount > 0)
+      {
+        lazy_query_->reserve(itemCount);
+      }
 
       for (auto itemIdx = 0; itemIdx < itemCount; ++itemIdx)
       {
@@ -180,7 +183,7 @@ namespace uri_parser
           keyValue.value = curQuery->value;
         }
 
-        query_.push_back(std::move(keyValue));
+        lazy_query_->push_back(std::move(keyValue));
         curQuery = curQuery->next;
       }
 
@@ -189,7 +192,7 @@ namespace uri_parser
         uriTypes_.uriFreeQueryList(queryList_);
       }
 
-      return query_;
+      return lazy_query_.get();
     }
 
     boost::optional<UrlReturnType> Fragment() const
@@ -211,7 +214,9 @@ namespace uri_parser
       uriTypes_.uriNormalizeSyntax(&uriObj_);
     }
 
-    boost::optional<UrlReturnType> GetUnescapedFragment(bool plusToSpace = true, UriBreakConversion breakConversion = URI_BR_DONT_TOUCH) const
+    boost::optional<UrlReturnType> GetUnescapedFragment(
+      bool plusToSpace = true
+      , UriBreakConversion breakConversion = URI_BR_DONT_TOUCH) const
     {
       auto frag = GetStringFromUrlPart(uriObj_.fragment);
       if (!frag.is_initialized())
@@ -246,7 +251,8 @@ namespace uri_parser
     UriApiTypes uriTypes_;
     UriStateType state_;
     UriObjType uriObj_;
-    bool freeMemoryOnClose_;
+    boost::optional<UriQuery<UrlReturnType>> lazy_query_;
+    std::atomic<bool> freeMemoryOnClose_;
   };
 
   // Use this helper proc to create UriEntry obj

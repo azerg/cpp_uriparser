@@ -3,18 +3,20 @@
 
 using namespace uri_parser;
 
-/*
 TEST(cppUriParser, find_key)
 {
   EXPECT_NO_THROW(
   {
     auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
-    auto query = entry.Query();
+    auto query = entry.GetQuery();
     auto keyIt = query.findKey("title");
-    EXPECT_STREQ(keyIt->value_.c_str(), "Thetitleofapost");
+    EXPECT_STREQ(keyIt->value.c_str(), "Thetitleofapost");
 
     auto keyInvalid = query.findKey("hello");
     EXPECT_TRUE(keyInvalid == query.end());
+
+    auto keyEmpty = query.findKey("");
+    EXPECT_TRUE(keyEmpty == query.end());
   });
 }
 
@@ -23,15 +25,15 @@ TEST(cppUriParser, find_value)
   EXPECT_NO_THROW(
   {
     auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
-    auto query = entry.Query();
+    auto query = entry.GetQuery();
     auto keyIt = query.findValue("http://domain.tld/");
-    EXPECT_STREQ(keyIt->key_.c_str(), "url");
+    EXPECT_STREQ(keyIt->key.c_str(), "url");
 
     auto keyInvalid = query.findValue("hello");
     EXPECT_TRUE(keyInvalid == query.end());
   });
 }
-*/
+
 TEST(cppUriParser, query_size)
 {
   const char* url = "http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla";

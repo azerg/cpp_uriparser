@@ -9,6 +9,7 @@
 
 namespace uri_parser
 {
+
   namespace internal
   {
     template <typename T>
@@ -81,165 +82,42 @@ namespace uri_parser
   } // namespace internal
 
   template <class UrlReturnType>
-  struct UriQueryEntry
+  struct UriQueryItem
   {
-    UrlReturnType key_;
-    UrlReturnType value_;
+    UrlReturnType key;
+    UrlReturnType value;
   };
 
-  template <class UriQueryListType, class UrlReturnType>
-  class UriQueryListIterator :
-    public std::iterator<std::forward_iterator_tag, UriQueryEntry<UrlReturnType>>
+  template <class UrlReturnType>
+  class UriQuery:
+    public std::vector<UriQueryItem<UrlReturnType>>
   {
-    typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
   public:
-    UriQueryListIterator(UriQueryListType* list) :
-      currentQueryList_(list){}
+    typedef typename std::vector<UriQueryItem<UrlReturnType>>::const_iterator QueryItemType;
 
-    IteratorType& operator++()
-    {
-      if (currentQueryList_->next != nullptr)
-      {
-        currentQueryList_ = currentQueryList_->next;
-      }
-      else
-      {
-        *this = IteratorType(nullptr);
-      }
-      return *this;
-    }
-
-    IteratorType operator++(int) const
-    {
-      IteratorType tmp(*this);
-      return ++tmp;
-    }
-
-    bool operator==(const IteratorType& right)
-    {
-      // supports end() == end()
-      if (currentQueryList_ == right.currentQueryList_)
-      {
-        return true;
-      }
-
-      // comparing Iterator with end()
-      if (right.currentQueryList_ == nullptr)
-      {
-        return false;
-      }
-
-      // comparing two "normal" iterators
-      return ( currentQueryList_->key == right.currentQueryList_->key &&
-        (currentQueryList_->value == right.currentQueryList_->value) &&
-        (currentQueryList_->next == right.currentQueryList_->next));
-    }
-
-    bool operator!=(const IteratorType& right)
-    {
-      return !operator==(right);
-    }
-
-    UriQueryEntry<UrlReturnType> operator*() const
-    {
-      return UriQueryEntry<UrlReturnType>{
-        currentQueryList_->key == nullptr ? UrlReturnType() : currentQueryList_->key,
-        currentQueryList_->value == nullptr ? UrlReturnType() : currentQueryList_->value};
-    }
-
-    UriQueryEntry<UrlReturnType>* operator->()
-    {
-      returnObjStorage_ = std::move(operator*());
-      return &returnObjStorage_;
-    }
-
-  private:
-    UriQueryListType* currentQueryList_;
-    UriQueryEntry<UrlReturnType> returnObjStorage_;
-  };
-
-  template <class UrlTextType>
-  class UriQueryList
-  {
-    typedef internal::UriTypes<UrlTextType> UriApiTypes;
-    typedef typename UriApiTypes::UriObjType UriObjType;
-    typedef typename UriApiTypes::UriQueryListType UriQueryListType;
-    typedef typename UriApiTypes::UrlReturnType UrlReturnType;
-    typedef UriQueryListIterator<UriQueryListType, UrlReturnType> IteratorType;
-  public:
-    UriQueryList(UriQueryList&& right) :
-      itemCount_(std::move(right.itemCount_)),
-      uriTypes_(std::move(right.uriTypes_)),
-      queryList_(std::move(right.queryList_))
-    {
-      // we have to cleaup right ptr, not to free it in right's destructor
-      right.queryList_ = nullptr;
-    }
-
-    bool empty() const { return itemCount_ == 0; }
-    int size() const { return itemCount_; }
-
-    UriQueryList& operator=(UriQueryList&& right)
-    {
-      std::swap(this->itemCount_, right.itemCount_);
-      std::swap(this->uriTypes_, right.uriTypes_);
-      this->queryList_ = right.queryList_;
-      right.queryList_ = nullptr;
-      return *this;
-    }
-
-    IteratorType begin() const { return IteratorType(queryList_); };
-    const IteratorType cbegin() const { return begin(); };
-    IteratorType end() const { return GetEndIterator(); };
-    const IteratorType cend() const { return end(); };
-
-    // If failed returns end()
-    // If succ - iterator to element found
-    IteratorType findKey(UrlTextType keyStr)
+    QueryItemType findKey(UrlReturnType keyStr) const
     {
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
-        if (item->key_.compare(keyStr) == 0)
+        if (item->key.compare(keyStr) == 0)
         {
           return item;
         }
       }
-      return GetEndIterator();
+      return end();
     }
 
-    IteratorType findValue(UrlTextType valueStr)
+    QueryItemType findValue(UrlReturnType valueStr) const
     {
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
-        if (item->value_.compare(valueStr) == 0)
+        if (item->value.compare(valueStr) == 0)
         {
           return item;
         }
       }
-      return GetEndIterator();
+      return end();
     }
-
-    UriQueryList(const UriObjType& uri) :
-      queryList_{},
-      itemCount_{}
-    {
-      uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount_, uri.query.first, uri.query.afterLast);
-    }
-
-    virtual ~UriQueryList()
-    {
-      if (queryList_ != nullptr)
-      {
-        uriTypes_.uriFreeQueryList(queryList_);
-      }
-    }
-
-  private:
-    IteratorType GetEndIterator() const { return IteratorType(nullptr); }
-
-    int itemCount_;
-    UriApiTypes uriTypes_;
-    UriQueryListType* queryList_;
   };
 
   // free helper functions
