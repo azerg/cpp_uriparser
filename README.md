@@ -17,7 +17,7 @@ C++ wrapper for uriparser have next features:
 # Sample usage
 1. Sample shows hot to iterate through paths:
 ```cpp
-auto parsedUrl = core::common_parsers::UriParseUrl("https://github.com/azerg/cpp_uriparser/blob/master/README.md");
+auto parsedUrl = uri_parser::UriParseUrl("https://github.com/azerg/cpp_uriparser/blob/master/README.md");
 auto pathHead = parsedUrl.PathHead();
 for ( auto pathIt : pathHead )
 {
