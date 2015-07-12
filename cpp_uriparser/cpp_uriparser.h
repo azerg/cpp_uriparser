@@ -159,7 +159,10 @@ namespace uri_parser
       QueryContainerType query_;
       UriQueryListType* queryList_{};
 
-      uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount, uriObj_.query.first, uriObj_.query.afterLast);
+      if (uriTypes_.uriDissectQueryMalloc(&queryList_, &itemCount, uriObj_.query.first, uriObj_.query.afterLast) != 0)
+      {
+        return QueryContainerType();
+      }
 
       UriQueryListType* curQuery = queryList_;
       UriQueryItem<UrlReturnType> keyValue;
