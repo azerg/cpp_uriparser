@@ -10,6 +10,7 @@ TEST(cppUriParser, find_key)
     auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&title=Thetitleofapost&lala=1&blabla");
     auto query = entry.GetQuery();
     auto keyIt = query.findKey("title");
+    EXPECT_FALSE(keyIt == query.end());
     EXPECT_STREQ(keyIt->value.c_str(), "Thetitleofapost");
 
     auto keyInvalid = query.findKey("hello");
@@ -17,6 +18,70 @@ TEST(cppUriParser, find_key)
 
     auto keyEmpty = query.findKey("");
     EXPECT_TRUE(keyEmpty == query.end());
+  });
+}
+
+TEST(cppUriParser, find_multiple_key_entries)
+{
+  EXPECT_NO_THROW(
+  {
+    auto entry = uri_parser::UriParseUrl("http://lol.wat/post?url=http://domain.tld/&lala=23&title=Thetitleofapost&lala=1&blabla");
+    auto query = entry.GetQuery();
+    auto keyIt = query.findKeyEntries("lala");
+    EXPECT_TRUE(keyIt.is_initialized());
+    EXPECT_EQ(keyIt->size(), 2);
+    auto id = 0;
+    for (auto item = std::begin(keyIt.get()); item != std::end(keyIt.get()); ++item, ++id)
+    {
+      switch (id)
+      {
+      case 0:
+        EXPECT_STREQ((*item)->key.c_str(), "lala");
+        EXPECT_STREQ((*item)->value.c_str(), "23");
+        break;
+      case 1:
+        EXPECT_STREQ((*item)->key.c_str(), "lala");
+        EXPECT_STREQ((*item)->value.c_str(), "1");
+        break;
+      default:
+        ADD_FAILURE();
+        break;
+      }
+    }
+  });
+}
+
+TEST(cppUriParser, find_multiple_value_entries)
+{
+  EXPECT_NO_THROW(
+  {
+    auto entry = uri_parser::UriParseUrl("http://lol.wat/post?heyhey=1&boom=1&title=Thetitleofapost&lala=1&blabla");
+  auto query = entry.GetQuery();
+  auto keyIt = query.findValueEntries("1");
+  EXPECT_TRUE(keyIt.is_initialized());
+  EXPECT_EQ(keyIt->size(), 3);
+  auto id = 0;
+  for (auto item = std::begin(keyIt.get()); item != std::end(keyIt.get()); ++item, ++id)
+  {
+    switch (id)
+    {
+    case 0:
+      EXPECT_STREQ((*item)->key.c_str(), "heyhey");
+      EXPECT_STREQ((*item)->value.c_str(), "1");
+      break;
+    case 1:
+      EXPECT_STREQ((*item)->key.c_str(), "boom");
+      EXPECT_STREQ((*item)->value.c_str(), "1");
+      break;
+    case 2:
+      EXPECT_STREQ((*item)->key.c_str(), "lala");
+      EXPECT_STREQ((*item)->value.c_str(), "1");
+      break;
+    default:
+      ADD_FAILURE();
+      break;
+    }
+  }
   });
 }
 

@@ -4,6 +4,8 @@
 #include <iostream>
 #include <iterator>
 #include <string>
+#include <list>
+#include <boost/optional.hpp>
 #include <type_traits>
 #include "uriparser/Uri.h"
 
@@ -93,30 +95,55 @@ namespace uri_parser
     public std::vector<UriQueryItem<UrlReturnType>>
   {
   public:
-    typedef typename std::vector<UriQueryItem<UrlReturnType>>::const_iterator QueryItemType;
+    typedef typename std::vector<UriQueryItem<UrlReturnType>> ContainerType;
+    typedef typename ContainerType::const_iterator QueryItemType;
 
-    QueryItemType findKey(UrlReturnType keyStr) const
+    boost::optional<std::list<QueryItemType>> findKeyEntries(UrlReturnType keyStr) const
     {
+      std::list<QueryItemType> result;
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
         if (item->key.compare(keyStr) == 0)
         {
-          return item;
+          result.push_back(item);
         }
       }
-      return std::vector<UriQueryItem<UrlReturnType>>::end();
+      return result.empty() ? boost::optional<std::list<QueryItemType>>() : result;
     }
 
-    QueryItemType findValue(UrlReturnType valueStr) const
+    boost::optional<std::list<QueryItemType>> findValueEntries(UrlReturnType valueStr) const
     {
+      std::list<QueryItemType> result;
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
         if (item->value.compare(valueStr) == 0)
         {
-          return item;
+          result.push_back(item);
         }
       }
-      return std::vector<UriQueryItem<UrlReturnType>>::end();
+      return result.empty() ? boost::optional<std::list<QueryItemType>>() : result;
+    }
+
+    // pick first occurrence of key
+    QueryItemType findKey(UrlReturnType keyStr) const
+    {
+      auto entries = findKeyEntries(keyStr);
+      if (entries.is_initialized() && !(*entries).empty())
+      {
+        return (*entries).front();
+      }
+      return ContainerType::end();
+    }
+
+    // pick first occurrence of value
+    QueryItemType findValue(UrlReturnType valueStr) const
+    {
+      auto entries = findValueEntries(valueStr);
+      if (entries.is_initialized() && !(*entries).empty())
+      {
+        return (*entries).front();
+      }
+      return ContainerType::end();
     }
   };
 
