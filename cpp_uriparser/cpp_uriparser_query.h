@@ -96,52 +96,31 @@ namespace uri_parser
   {
   public:
     typedef typename std::vector<UriQueryItem<UrlReturnType>> ContainerType;
-    typedef typename ContainerType::const_iterator QueryItemType;
+    typedef typename ContainerType::const_iterator QueryItemIteratorType;
 
-    boost::optional<std::list<QueryItemType>> findKeyEntries(UrlReturnType keyStr) const
+    // If failed returns end()
+    // If succ - iterator to element found
+    QueryItemIteratorType findKey(UrlReturnType keyStr) const
     {
-      std::list<QueryItemType> result;
       for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
         if (item->key.compare(keyStr) == 0)
         {
-          result.push_back(item);
+          return item;
         }
-      }
-      return result.empty() ? boost::optional<std::list<QueryItemType>>() : result;
-    }
-
-    boost::optional<std::list<QueryItemType>> findValueEntries(UrlReturnType valueStr) const
-    {
-      std::list<QueryItemType> result;
-      for (auto item = std::begin(*this); item != std::end(*this); ++item)
-      {
-        if (item->value.compare(valueStr) == 0)
-        {
-          result.push_back(item);
-        }
-      }
-      return result.empty() ? boost::optional<std::list<QueryItemType>>() : result;
-    }
-
-    // pick first occurrence of key
-    QueryItemType findKey(UrlReturnType keyStr) const
-    {
-      auto entries = findKeyEntries(keyStr);
-      if (entries.is_initialized() && !(*entries).empty())
-      {
-        return (*entries).front();
       }
       return ContainerType::end();
     }
 
     // pick first occurrence of value
-    QueryItemType findValue(UrlReturnType valueStr) const
+    QueryItemIteratorType findValue(UrlReturnType valueStr) const
     {
-      auto entries = findValueEntries(valueStr);
-      if (entries.is_initialized() && !(*entries).empty())
+      for (auto item = std::begin(*this); item != std::end(*this); ++item)
       {
-        return (*entries).front();
+        if (item->value.compare(valueStr) == 0)
+        {
+          return item;
+        }
       }
       return ContainerType::end();
     }
