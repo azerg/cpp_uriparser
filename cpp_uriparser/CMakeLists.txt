@@ -10,6 +10,7 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 
 set ( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin )
 set ( URIPARSER_FOLDER ${CMAKE_HOME_DIRECTORY}/dependencies/uriparser-0.8.2 )
+set ( BOOST_FOLDER ${BOOST_ROOT} )
 
 ##################################################################################################################
 project (cpp_uriparser_test)
