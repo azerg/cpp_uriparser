@@ -7,8 +7,8 @@ platform:
   - Win32
 
 environment:
-  BOOST_ROOT: C:\boost-release-master
-  BOOST_LIBRARYDIR: C:\Libraries\boost\stage\lib
+  BOOST_ROOT: C:\Libraries\boost_1_59_0
+  BOOST_LIBRARYDIR: C:\Libraries\boost_1_59_0\lib32-msvc-14.0
   BUILD_EXAMPLES: OFF  # don't build examples to not exceed allowed build time (40 min)
 
 configuration:
@@ -25,22 +25,24 @@ init:
   - cmd: msbuild /version  
   
 install:
-  - ps: (new-object net.webclient).DownloadFile('https://github.com/ned14/boost-release/archive/master.zip', 'C:\master.zip')
-  - ps: Add-Type -A System.IO.Compression.FileSystem
-  - ps: "[IO.Compression.ZipFile]::ExtractToDirectory('C:\\master.zip', 'C:\\')"
-  - cd "C:\boost-release-master"
-  - bootstrap.bat --with-toolset=msvc-14.0
-  - b2 --with-program_options --with-filesystem --with-system
-  - cd "%APPVEYOR_BUILD_FOLDER%"
-  - dir C:\boost-release-master
+  - dir C:\Libraries
   
 before_build:
+  - appveyor DownloadFile http://googletest.googlecode.com/files/gtest-1.7.0.zip -FileName gtest-1.7.0.zip
+  - 7z x gtest-1.7.0.zip > NUL
+  - cd gtest-1.7.0
+  - md build
+  - cd build
+  - cmake -DBUILD_SHARED_LIBS=ON ..
+  - cmake --build . --config Release
+  - cd ..
+  - cd ..
   - if %platform%==Win32 set generator=Visual Studio 14
   - if %platform%==Win64 set generator=Visual Studio 14 Win64
   - if %platform%==Win32 set vcplatform=Win32
   - if %platform%==Win64 set vcplatform=x64
   - cmd: cd cpp_uriparser
-  - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT="%BOOST_ROOT%"
+  - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT="%BOOST_ROOT%" -DGTEST_FOLDER=%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0\
   
 build:
   project: C:\projects\cpp_uriparser\cpp_uriparser\build\cpp_uriparser_test.sln # path to Visual Studio solution or project
