@@ -42,7 +42,7 @@ before_build:
   - if %platform%==Win32 set vcplatform=Win32
   - if %platform%==Win64 set vcplatform=x64
   - cmd: cd cpp_uriparser
-  - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT="%BOOST_ROOT%" -DGTEST_FOLDER=%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0\
+  - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT="%BOOST_ROOT%" -DGTEST_FOLDER=%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0\ --debug-output
   
 build:
   project: C:\projects\cpp_uriparser\cpp_uriparser\build\cpp_uriparser_test.sln # path to Visual Studio solution or project

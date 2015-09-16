@@ -144,7 +144,7 @@ namespace uri_parser
       return false;
     }
 
-    uriUnescapeInPlaceEx uriUnescapeInPlaceExProc =
+    auto uriUnescapeInPlaceExProc =
       std::is_convertible<UrlTextType, const char*>::value ?
       (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExA : (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExW;
 
