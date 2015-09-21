@@ -183,7 +183,6 @@ namespace uri_parser
       UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
     {
       typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type resultType;
-      typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, const wchar_t*, const char*>::type baseType;
       resultType result;
 
       if (!UnescapeString(srcStrBegin, result))
