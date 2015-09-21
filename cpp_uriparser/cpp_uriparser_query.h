@@ -29,6 +29,22 @@ namespace uri_parser
       typedef typename std::add_pointer<typename base_type<T>::type>::type type;
     };
 
+    template<class T, class = void>
+    struct IsStdString
+    {
+      static const bool value = false;
+    };
+
+    // todo(azerg): tofix
+    // dummy was to check if type is std::base_string. Will accept containers too :D :D
+    template<class T>
+    struct IsStdString <T, typename std::enable_if<
+      std::is_object<typename T::const_iterator>::value && \
+      std::is_object<typename std::iterator_traits<typename T::const_iterator>::value_type>::value>::type>
+    {
+      static const bool value = true;
+    };
+
     // default API types
 #define URI_API_TYPES(PREFIX) \
       typedef UriUri##PREFIX UriObjType; \
@@ -36,7 +52,7 @@ namespace uri_parser
       typedef UriPathSegment##PREFIX UriPathSegmentType; \
       typedef UriQueryListStruct##PREFIX UriQueryListType; \
       \
-      std::function<int(UriStateType*, UrlTextType)> parseUri;  \
+      std::function<int(UriStateType*, UrlTextType)> parseUri; /*NOLINT*/ \
       std::function<void(UriObjType*)> freeUriMembers;  \
       std::function<int(UriObjType*)> uriNormalizeSyntax; \
       typedef decltype(UriQueryListType::key) QueryListCharType;  \
@@ -155,6 +171,49 @@ namespace uri_parser
 
     retVal = std::move(reslt);
     return true;
+  }
+
+  namespace internal
+  {
+    // char *, wchar*
+    template <class UrlTextType>
+    auto UnescapeStringBase(
+      typename std::enable_if<!internal::IsStdString<UrlTextType>::value, UrlTextType>::type srcStrBegin,
+      bool plusToSpace = true,
+      UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
+    {
+      typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type resultType;
+      typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, const wchar_t*, const char*>::type baseType;
+      resultType result;
+
+      if (!UnescapeString(srcStrBegin, result))
+      {
+        throw std::runtime_error("error unescaping string");
+      }
+
+      return result;
+    }
+
+    // string, wstring
+    template <class UrlTextType>
+    auto UnescapeStringBase(
+      typename std::enable_if<internal::IsStdString<UrlTextType>::value, UrlTextType>::type srcStrBegin,
+      bool plusToSpace = true,
+      UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
+    {
+      typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, const wchar_t*, const char*>::type baseType;
+      return UnescapeStringBase<baseType>(srcStrBegin.c_str());
+    }
+  } // namespace internal
+
+
+  template <class UrlTextType> // helped proc to help compiler to deduce type of UrlTextType ( this occurs coz of enable_if<..,UrlTextType> )
+  auto UnescapeString(
+    UrlTextType srcStrBegin,
+    bool plusToSpace = true,
+    UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
+  {
+    return internal::UnescapeStringBase<UrlTextType>(srcStrBegin);
   }
 
 } // namespace uri_parser

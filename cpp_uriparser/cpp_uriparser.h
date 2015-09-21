@@ -144,7 +144,7 @@ namespace uri_parser
       return GetStringFromUrlPart(uriObj_.hostText);
     }
 
-    const UriQuery<UrlReturnType>& GetQuery()
+    const UriQuery<UrlReturnType>& Query()
     {
       if (lazy_query_.is_initialized())
       {
