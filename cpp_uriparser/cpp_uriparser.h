@@ -202,7 +202,7 @@ namespace uri_parser
 
     UrlPathIterator<UriPathSegmentType, UrlReturnType> PathHead() const
     {
-      if (uriObj_.pathHead)
+      if (uriObj_.pathHead == nullptr)
       {
         return UrlPathIterator<UriPathSegmentType, UrlReturnType>();
       }
