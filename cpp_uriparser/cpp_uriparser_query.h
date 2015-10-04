@@ -164,26 +164,33 @@ namespace uri_parser
       std::is_convertible<UrlTextType, const char*>::value ?
       (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExA : (uriUnescapeInPlaceEx)&uriUnescapeInPlaceExW;
 
-    uriUnescapeInPlaceExProc(
+    auto newStringEnd = uriUnescapeInPlaceExProc(
       &reslt.front(),
       plusToSpace ? URI_TRUE : URI_FALSE,
       breakConversion);
 
-    retVal = std::move(reslt);
+    if (newStringEnd == nullptr)
+    {
+      return false;
+    }
+
+    retVal.assign(&reslt.front(), newStringEnd);
     return true;
   }
 
   namespace internal
   {
     // char *, wchar*
-    template <class UrlTextType>
-    auto UnescapeStringBase(
+    template <
+      class UrlTextType
+      , class ReturnType =
+        typename std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type>
+    ReturnType UnescapeStringBase(
       typename std::enable_if<!internal::IsStdString<UrlTextType>::value, UrlTextType>::type srcStrBegin,
       bool plusToSpace = true,
       UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
     {
-      typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type resultType;
-      resultType result;
+      ReturnType result;
 
       if (!UnescapeString(srcStrBegin, result))
       {
