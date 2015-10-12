@@ -2,6 +2,9 @@ set (test_executable_name cppUriparserTest)
 
 add_executable (${test_executable_name} testMain.cpp uriparser_test.cpp query_test.cpp)
 
+set(BOOST_ROOT ${BOOST_FOLDER})
+find_package(Boost 1.36.0 REQUIRED system)
+
 include_directories ("${PROJECT_SOURCE_DIR}" "${URIPARSER_FOLDER}/include" "${GTEST_FOLDER}/include" "${BOOST_FOLDER}")
 
 if (WIN32)
@@ -20,10 +23,6 @@ if (WIN32)
 		endif()		
 	endforeach()
 	########################################################################
-	
-	if (MSVC)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
-	endif()
 else()
 	message ("---linking linux gtest libs")
 	target_link_libraries (${test_executable_name} ${GTEST_FOLDER}/cmake/libgtest.so)

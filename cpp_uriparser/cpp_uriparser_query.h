@@ -187,12 +187,12 @@ namespace uri_parser
         typename std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type>
     ReturnType UnescapeStringBase(
       typename std::enable_if<!internal::IsStdString<UrlTextType>::value, UrlTextType>::type srcStrBegin,
-      bool plusToSpace = true,
-      UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
+      bool plusToSpace,
+      UriBreakConversion breakConversion)
     {
       ReturnType result;
 
-      if (!UnescapeString(srcStrBegin, result))
+      if (!UnescapeString(srcStrBegin, result, plusToSpace, breakConversion))
       {
         throw std::runtime_error("error unescaping string");
       }
@@ -204,22 +204,23 @@ namespace uri_parser
     template <class UrlTextType>
     auto UnescapeStringBase(
       typename std::enable_if<internal::IsStdString<UrlTextType>::value, UrlTextType>::type srcStrBegin,
-      bool plusToSpace = true,
-      UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
+      bool plusToSpace,
+      UriBreakConversion breakConversion)
     {
       typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, const wchar_t*, const char*>::type baseType;
-      return UnescapeStringBase<baseType>(srcStrBegin.c_str());
+      return UnescapeStringBase<baseType>(srcStrBegin.c_str(), plusToSpace, breakConversion);
     }
   } // namespace internal
 
 
   template <class UrlTextType> // helped proc to help compiler to deduce type of UrlTextType ( this occurs coz of enable_if<..,UrlTextType> )
-  auto UnescapeString(
+  typename std::conditional <std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type
+    UnescapeString(
     UrlTextType srcStrBegin,
     bool plusToSpace = true,
     UriBreakConversion breakConversion = URI_BR_DONT_TOUCH)
   {
-    return internal::UnescapeStringBase<UrlTextType>(srcStrBegin);
+    return internal::UnescapeStringBase<UrlTextType>(srcStrBegin, plusToSpace, breakConversion);
   }
 
 } // namespace uri_parser
