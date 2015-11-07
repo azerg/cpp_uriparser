@@ -43,5 +43,5 @@ install:
 
 build_script:
   - cmd: cd cpp_uriparser
-  - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT="%BOOST_ROOT%" -DGTEST_FOLDER="%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0"
+  - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT="%BOOST_ROOT%" -DGTEST_FOLDER="%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0" -DGTEST_LIBRARY=%GTEST_LIBRARY% -DGTESTD_LIBRARY=%GTESTD_LIBRARY%
   - cmake --build "build" --config %CONFIG%
