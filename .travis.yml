@@ -13,3 +13,5 @@ script:
   - make
   - cd ../bin
   - ./cppUriparserTest
+dd:
+  secure: RM5p7SQ+ic+qE2dc0pmwwXmip2F7wwz7efSOoFi93lQs2bvEVcXRbycX7FOinAPCzMl2WL1UDJqZtkEonpDexVQuYayA+U9J0DM3t1rJgzCGxdmLxqXhrI4inxtmqQ6+DmpobMeqUMjEjRWjEeq+OsZSfVA0F8e/6CZKNrfc9iA=

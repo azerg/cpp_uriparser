@@ -208,7 +208,7 @@ namespace uri_parser
       bool plusToSpace,
       UriBreakConversion breakConversion)
     {
-      typedef std::conditional < std::is_convertible<UrlTextType, const wchar_t*>::value, const wchar_t*, const char*>::type baseType;
+      typedef typename std::conditional <std::is_convertible<UrlTextType, const wchar_t*>::value, const wchar_t*, const char*>::type baseType;
       return UnescapeStringBase<baseType>(srcStrBegin.c_str(), plusToSpace, breakConversion);
     }
   } // namespace internal
