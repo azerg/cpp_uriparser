@@ -36,9 +36,14 @@ install:
   - cmake --build . --config Release
   - cmake --build . --config Debug
   - cd ../..
+  - if %platform%==Win32 set generator=Visual Studio 14
+  - if %platform%==Win64 set generator=Visual Studio 14 Win64
+  - if %platform%==Win32 set vcplatform=Win32
+  - if %platform%==Win64 set vcplatform=x64
   - set GTEST_LIBRARY=%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0\build\Release\gtest.lib
   - set GTESTD_LIBRARY=%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0\build\Debug\gtest.lib
 
 build_script:
+  - cmd: cd cpp_uriparser
   - cmake . -B"build" -G"Visual Studio 14" -Wno-dev -DBOOST_ROOT:STRING="%BOOST_ROOT%" -DGTEST_ROOT:STRING="%APPVEYOR_BUILD_FOLDER%\gtest-1.7.0"
   - cmake --build "build" --config %CONFIG%
