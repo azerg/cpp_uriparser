@@ -1,5 +1,3 @@
-version: "{build}"
-
 platform:
   - Win32
 
