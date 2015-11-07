@@ -61,6 +61,16 @@ TEST(cppUriParser, unescaping_fragment)
   EXPECT_STREQ(frag.get().c_str(), "q=\xd0\xbf\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82");
 }
 
+TEST(uriparserFreeFunctions, unescape_function_normal)
+{
+  std::string srcStr = "http://www.w.com/%01%FFtext/lasttoken%0D%0A";
+  auto unescapedString = uri_parser::UnescapeString(srcStr);
+  EXPECT_STREQ("http://www.w.com/\x01\xfftext/lasttoken\r\n", unescapedString.c_str());
+
+  auto unescapedString2 = uri_parser::UnescapeString("%0D%0A%08%09");
+  EXPECT_STREQ("\r\n\b\t", unescapedString2.c_str());
+}
+
 TEST(cppUriParser, DISABLED_UriTypesMoveTest)
 {
   typedef uri_parser::internal::UriTypes<wchar_t*> UriTypesChar;

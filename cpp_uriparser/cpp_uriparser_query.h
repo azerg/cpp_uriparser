@@ -174,7 +174,7 @@ namespace uri_parser
       return false;
     }
 
-    retVal.assign(&reslt.front(), newStringEnd);
+    retVal.assign(&reslt.front());
     return true;
   }
 
@@ -202,7 +202,8 @@ namespace uri_parser
 
     // string, wstring
     template <class UrlTextType>
-    auto UnescapeStringBase(
+    typename std::conditional <std::is_convertible<UrlTextType, const wchar_t*>::value, std::wstring, std::string>::type
+      UnescapeStringBase(
       typename std::enable_if<internal::IsStdString<UrlTextType>::value, UrlTextType>::type srcStrBegin,
       bool plusToSpace,
       UriBreakConversion breakConversion)

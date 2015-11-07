@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 set ( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin )
 set ( URIPARSER_FOLDER ${CMAKE_HOME_DIRECTORY}/dependencies/uriparser-0.8.2 )
-set ( BOOST_FOLDER ${BOOST_ROOT} )
 
 ##################################################################################################################
 project (cpp_uriparser_test)
@@ -14,8 +13,10 @@ endif()
 message ("Starting build on "+${CMAKE_SYSTEM})
 
 message ("${CMAKE_CXX_FLAGS_RELEASE} :: ${CMAKE_CXX_FLAGS}")
-message ("BOOST_FOLDER = ${BOOST_FOLDER}")
+message ("BOOST_ROOT = ${BOOST_ROOT}")
 message ("GTEST_FOLDER = ${GTEST_FOLDER}")
+message ("GTEST_LIBRARY = ${GTEST_LIBRARY}")
+message ("GTESTD_LIBRARY = ${GTESTD_LIBRARY}")
 message ("${CMAKE_CXX_COMPILER}")
 message ("${CMAKE_VS_PLATFORM_TOOLSET}")
 message ("-------------")
